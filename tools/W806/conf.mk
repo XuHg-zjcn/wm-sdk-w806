@@ -98,6 +98,18 @@ CCFLAGS := -Wall \
     -fdata-sections  \
     -ffunction-sections
 
+CCPPFLAGS := -Wall \
+    -DTLS_CONFIG_CPU_XT804=1 \
+    -DGCC_COMPILE=1 \
+    -mcpu=ck804ef \
+    $(optimization) \
+    -std=gnu++11 \
+    -c  \
+    -mhard-float  \
+    -Wall  \
+    -fdata-sections  \
+    -ffunction-sections
+
 ASMFLAGS := -Wall \
     -DTLS_CONFIG_CPU_XT804=1 \
     -DGCC_COMPILE=1 \
