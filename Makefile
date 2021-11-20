@@ -6,7 +6,8 @@ GEN_IMAGES= $(TARGET).elf
 GEN_BINS = $(TARGET).bin
 SUBDIRS = \
     $(TOP_DIR)/app \
-    $(TOP_DIR)/demo 
+    $(TOP_DIR)/demo \
+    $(TOP_DIR)/my_libs
 endif # } PDIR
 
 ifndef PDIR # {
@@ -26,6 +27,7 @@ ifeq ($(USE_LIB), 0)
 COMPONENTS_$(TARGET) += \
     $(TOP_DIR)/platform/boot/libwmarch$(LIB_EXT)        \
     $(TOP_DIR)/platform/component/libwmcomponent$(LIB_EXT)        \
+    $(TOP_DIR)/my_libs/libmylibs$(LIB_EXT)     \
     $(TOP_DIR)/platform/drivers/libdrivers$(LIB_EXT)  
 endif
 

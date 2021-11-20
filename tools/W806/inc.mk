@@ -43,3 +43,12 @@ INCLUDES += -I $(TOP_DIR)/src/os/rtos/include
 INCLUDES += -I $(TOP_DIR)/demo
 
 INCLUDES += -I $(TOP_DIR)/app/inc
+
+
+INCLUDES += -I $(TOP_DIR)/my_libs/common/dataflow/Inc
+INCLUDES += -I $(TOP_DIR)/my_libs/common/fonts
+INCLUDES += -I $(TOP_DIR)/my_libs/common/others/Inc
+
+INCLUDES += -I $(TOP_DIR)/my_libs/exts/Inc
+INCLUDES += -I $(TOP_DIR)/my_libs/interface/Inc
+INCLUDES += -I $(TOP_DIR)/my_libs/w806/Inc
