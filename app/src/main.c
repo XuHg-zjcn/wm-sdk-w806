@@ -16,62 +16,213 @@
 
 #include <stdio.h>
 #include "wm_hal.h"
+#include "ff.h"
 
 #define DUTY_MAX 100
 #define DUTY_MIN 50
+#define TEST_DEBUG printf
+
+SPI_HandleTypeDef hspi;
 PWM_HandleTypeDef pwm[3];
 int i, j, m[3] = {0}, d[3] = {DUTY_MIN, (DUTY_MIN + DUTY_MAX) / 2, DUTY_MAX - 1};
 
-static void PWM_Init(PWM_HandleTypeDef *hpwm, uint32_t channel);
 void Error_Handler(void);
+
+int MMC_disk_status()
+{
+    return 0;
+}
+
+int MMC_disk_initialize()
+{
+    printf("SdInitialize %d\r\n", SdInitialize());
+    return 0;
+}
+
+int MMC_disk_read(uint8_t *buff, uint32_t sector, uint8_t cnt)
+{
+    return SdReadDisk(buff, sector, cnt);
+}
+
+int MMC_disk_write(buff, sector, count)
+{
+    return SdWriteDisk(buff, sector, count);
+}
+
+uint8_t SdSpiReadWriteByte(uint8_t write_byte)
+{
+    uint8_t read_byte;
+    HAL_SPI_TransmitReceive(&hspi, &write_byte, &read_byte, 1, 1000);
+    return read_byte;
+}
+
+static void SPI_Init(void)
+{
+    hspi.Instance = SPI;
+    hspi.Init.Mode = SPI_MODE_MASTER;
+    hspi.Init.CLKPolarity = SPI_POLARITY_HIGH;
+    hspi.Init.CLKPhase = SPI_PHASE_2EDGE;
+    hspi.Init.NSS = SPI_NSS_SOFT;
+    hspi.Init.BaudRatePrescaler = 59;
+    hspi.Init.FirstByte = SPI_LITTLEENDIAN;
+    
+    if (HAL_SPI_Init(&hspi) != HAL_OK)
+    {
+        Error_Handler();
+    }
+}
+
+void SdIOInit(void)
+{
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    GPIO_InitStruct.Pin = GPIO_PIN_0;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+}
+
+void Write_CS_Pin(int x)
+{
+    if(x){
+        __HAL_SPI_SET_CS_HIGH(&hspi);
+    }else{
+        __HAL_SPI_SET_CS_LOW(&hspi);
+    }
+}
+
+void SdSpiSpeedLow(void)
+{
+    hspi.Init.BaudRatePrescaler = 60 - 1;
+    if (HAL_SPI_Init(&hspi) != HAL_OK)
+    {
+        Error_Handler();
+    }
+}
+
+void SdSpiSpeedHigh(void)
+{
+    hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+    if (HAL_SPI_Init(&hspi) != HAL_OK)
+    {
+        Error_Handler();
+    }
+}
+
+//FAT功能测试：格式化测试，文件写入测试，文件读取测试（基本功能）
+int fatfs_func(void)
+{
+	FATFS fs; //FatFs文件系统对象
+	FIL fnew; //文件对象
+	FRESULT res_sd;//文件操作结果
+	UINT fnum; //文件成功读写数量
+	BYTE ReadBuffer[256] = {0};
+	BYTE work[FF_MAX_SS];
+	BYTE WriteBuffer[] = "成功移植了FatFs文件系统！\r\n"; //写缓存区
+	
+
+	//挂载SD卡
+	res_sd = f_mount(&fs, "1:/", 1);
+	
+	//***********************格式化测试****************************
+	if(res_sd == FR_NO_FILESYSTEM)
+	{
+		while(1)
+		{
+			TEST_DEBUG("SD卡没有文件系统，即将进行格式化...\r\n");
+			//格式化
+			
+			res_sd = f_mkfs("1:", 0, work, sizeof(work));
+			
+			if(res_sd == FR_OK)
+			{
+				TEST_DEBUG("SD卡成功格式化！\r\n");
+				//格式化后先取消挂载
+				res_sd = f_mount(NULL, "1:", 1);
+				//再重新挂载
+				res_sd = f_mount(&fs, "1:", 1);
+				break;
+			}
+		}
+	}
+	else if(res_sd != FR_OK)
+	{
+		TEST_DEBUG("挂载文件系统失败！可能是因为文件初始化失败！错误代码：%d\r\n", res_sd);
+	}
+	else
+	{
+		TEST_DEBUG("文件系统挂载成功， 可进行读写测试！\r\n");
+	}
+	
+	//***********************写测试****************************
+	//打开文件，如果文件不存在则创建它
+	TEST_DEBUG("即将进行文件写入测试....\r\n");
+	//打开文件，若不存在就创建
+	res_sd = f_open(&fnew, "1:FatFs读写测试文件.txt", FA_CREATE_ALWAYS | FA_WRITE);
+	//文件打开成功
+	if(res_sd == FR_OK)
+	{
+		TEST_DEBUG("打开文件成功！开始写入数据！\r\n");
+		res_sd= f_write(&fnew, WriteBuffer, sizeof(WriteBuffer), &fnum);
+		
+		if(res_sd == FR_OK)
+		{
+			TEST_DEBUG("数据写入成功，共写入%d个字符！\r\n", fnum);
+			TEST_DEBUG("数据：%s", WriteBuffer);
+		}
+		else
+		{
+			TEST_DEBUG("数据写入失败！\r\n");
+		}
+		
+		//关闭文件
+		f_close(&fnew);
+	}else{
+		TEST_DEBUG("文件打开失败！错误码=%d\r\n", res_sd);
+	}
+	
+	//***********************读测试****************************
+	//打开文件，如果文件不存在则创建它
+	TEST_DEBUG("即将进行文件读取测试....\r\n");
+	//打开文件，若不存在就创建
+	res_sd = f_open(&fnew, "1:FatFs读写测试文件.txt", FA_OPEN_EXISTING | FA_READ);
+	//文件打开成功
+	if(res_sd == FR_OK)
+	{
+		TEST_DEBUG("打开文件成功！开始读取数据！\r\n");
+		res_sd= f_read(&fnew, ReadBuffer, sizeof(ReadBuffer), &fnum);
+		
+		if(res_sd == FR_OK)
+		{
+			TEST_DEBUG("数据读取成功！\r\n");
+			TEST_DEBUG("数据：%s\r\n", ReadBuffer);
+		}
+		else
+		{
+			TEST_DEBUG("数据读取失败！\r\n");
+		}
+		
+		//关闭文件
+		f_close(&fnew);
+	}else{
+		TEST_DEBUG("文件打开失败！错误码=%d\r\n", res_sd);
+	}
+	
+	//取消挂载文件系统
+	f_mount(NULL, "1:", 1);
+
+	return 0;
+}
 
 int main(void)
 {
     SystemClock_Config(CPU_CLK_160M);
     printf("enter main\r\n");
-
-    for (i = 2; i >= 0; i--)
-    {
-        PWM_Init(&pwm[i], PWM_CHANNEL_0 + i);
-        HAL_PWM_Start(&pwm[i]);
-    }
-
-    while (1)
-    {
-        for (i = 0; i < 3; i++)
-        {
-            if (m[i] == 0) // Increasing
-            {
-                HAL_PWM_Duty_Set(&pwm[i], d[i]++);
-                if (d[i] == DUTY_MAX)
-                {
-                    m[i] = 1;
-                }
-            }
-            else // Decreasing
-            {
-                HAL_PWM_Duty_Set(&pwm[i], d[i]--);
-                if (d[i] == DUTY_MIN)
-                {
-                    m[i] = 0;
-                }
-            }
-        }
-        HAL_Delay(20);
-    }
-}
-
-static void PWM_Init(PWM_HandleTypeDef *hpwm, uint32_t channel)
-{
-    hpwm->Instance = PWM;
-    hpwm->Init.AutoReloadPreload = PWM_AUTORELOAD_PRELOAD_ENABLE;
-    hpwm->Init.CounterMode = PWM_COUNTERMODE_EDGEALIGNED_DOWN;
-    hpwm->Init.Prescaler = 4;
-    hpwm->Init.Period = 99;    // Frequency = 40,000,000 / 4 / (99 + 1) = 100,000 = 100KHz
-    hpwm->Init.Pulse = 19;     // Duty Cycle = (19 + 1) / (99 + 1) = 20%
-    hpwm->Init.OutMode = PWM_OUT_MODE_INDEPENDENT; // Independent mode
-    hpwm->Channel = channel;
-    HAL_PWM_Init(hpwm);
+    SdIOInit();
+    SPI_Init();
+    fatfs_func();
+    while (1);
 }
 
 void Error_Handler(void)
