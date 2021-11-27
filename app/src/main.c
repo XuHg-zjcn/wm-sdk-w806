@@ -111,6 +111,8 @@ void SdSpiSpeedHigh(void)
 }
 
 //FAT功能测试：格式化测试，文件写入测试，文件读取测试（基本功能）
+//如需支持长文件名，请打开FF_USE_LFN
+//目前有点小问题，不清楚原因。有时候复位后会卡住，需要将SD卡断电后再上电才能识别。
 int fatfs_func(void)
 {
 	FATFS fs; //FatFs文件系统对象
@@ -159,7 +161,7 @@ int fatfs_func(void)
 	//打开文件，如果文件不存在则创建它
 	TEST_DEBUG("即将进行文件写入测试....\r\n");
 	//打开文件，若不存在就创建
-	res_sd = f_open(&fnew, "1:FatFs读写测试文件.txt", FA_CREATE_ALWAYS | FA_WRITE);
+	res_sd = f_open(&fnew, "1:/fatfs.txt", FA_CREATE_ALWAYS | FA_WRITE);
 	//文件打开成功
 	if(res_sd == FR_OK)
 	{
@@ -183,10 +185,11 @@ int fatfs_func(void)
 	}
 	
 	//***********************读测试****************************
+	//请在电脑上创建read.txt文件，写点内容供测试
 	//打开文件，如果文件不存在则创建它
 	TEST_DEBUG("即将进行文件读取测试....\r\n");
 	//打开文件，若不存在就创建
-	res_sd = f_open(&fnew, "1:FatFs读写测试文件.txt", FA_OPEN_EXISTING | FA_READ);
+	res_sd = f_open(&fnew, "1:/read.txt", FA_OPEN_EXISTING | FA_READ);
 	//文件打开成功
 	if(res_sd == FR_OK)
 	{
