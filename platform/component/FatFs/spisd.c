@@ -328,10 +328,10 @@ u8 SdWriteDisk(u8*buf,u32 sector,u8 cnt)
         {
             do
             {
-                r1=SdSendBlock(buf,0xFC);//接收512个字节	 
+                r1=SdSendBlock(buf,0xFC);//发送512个字节	 
                 buf+=512;  
             }while(--cnt && r1==0);
-            r1=SdSendBlock(0,0xFD);//接收512个字节 
+            r1=SdSendBlock(0,0xFD);//发送512个字节 
         }
     }   
     SD_DisSelect();//取消片选
