@@ -29,7 +29,7 @@ DSTATUS disk_status (
 
 	switch (pdrv) {
 	case DEV_RAM :
-		result = RAM_disk_status();
+		//result = RAM_diskstatus();
 
 		// translate the reslut code here
 
@@ -43,7 +43,7 @@ DSTATUS disk_status (
 		return stat;
 
 	case DEV_USB :
-		result = USB_disk_status();
+		//result = USB_diskstatus();
 
 		// translate the reslut code here
 
@@ -67,7 +67,7 @@ DSTATUS disk_initialize (
 
 	switch (pdrv) {
 	case DEV_RAM :
-		result = RAM_disk_initialize();
+		//result = RAM_diskinitialize();
 
 		// translate the reslut code here
 
@@ -81,7 +81,7 @@ DSTATUS disk_initialize (
 		return stat;
 
 	case DEV_USB :
-		result = USB_disk_initialize();
+		//result = USB_diskinitialize();
 
 		// translate the reslut code here
 
@@ -110,7 +110,7 @@ DRESULT disk_read (
 	case DEV_RAM :
 		// translate the arguments here
 
-		result = RAM_disk_read(buff, sector, count);
+		//result = RAM_diskread(buff, sector, count);
 
 		// translate the reslut code here
 
@@ -128,7 +128,7 @@ DRESULT disk_read (
 	case DEV_USB :
 		// translate the arguments here
 
-		result = USB_disk_read(buff, sector, count);
+		//result = USB_diskread(buff, sector, count);
 
 		// translate the reslut code here
 
@@ -160,7 +160,7 @@ DRESULT disk_write (
 	case DEV_RAM :
 		// translate the arguments here
 
-		result = RAM_disk_write(buff, sector, count);
+		//result = RAM_diskwrite(buff, sector, count);
 
 		// translate the reslut code here
 
@@ -178,7 +178,7 @@ DRESULT disk_write (
 	case DEV_USB :
 		// translate the arguments here
 
-		result = USB_disk_write(buff, sector, count);
+		//result = USB_diskwrite(buff, sector, count);
 
 		// translate the reslut code here
 
