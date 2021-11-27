@@ -39,7 +39,7 @@ DSTATUS disk_status (
 		result = MMC_disk_status();
 
 		// translate the reslut code here
-
+		stat = RES_OK;
 		return stat;
 
 	case DEV_USB :
@@ -77,7 +77,7 @@ DSTATUS disk_initialize (
 		result = MMC_disk_initialize();
 
 		// translate the reslut code here
-
+		stat = RES_OK;
 		return stat;
 
 	case DEV_USB :
@@ -122,7 +122,7 @@ DRESULT disk_read (
 		result = MMC_disk_read(buff, sector, count);
 
 		// translate the reslut code here
-
+		res = RES_OK;
 		return res;
 
 	case DEV_USB :
@@ -172,7 +172,7 @@ DRESULT disk_write (
 		result = MMC_disk_write(buff, sector, count);
 
 		// translate the reslut code here
-
+		res = RES_OK;
 		return res;
 
 	case DEV_USB :
@@ -214,7 +214,18 @@ DRESULT disk_ioctl (
 	case DEV_MMC :
 
 		// Process of the command for the MMC/SD card
-
+		switch(cmd){
+			case CTRL_SYNC:
+				//等待写入完成，目前不加也没有问题，如果有问题请及时上报
+				break;
+			case GET_SECTOR_SIZE:
+				*(WORD*)buff = 512;
+				break; //只支持512字节扇区
+			case GET_SECTOR_COUNT:
+				*(LBA_t*)buff = SdGetSectorCount();
+				break;
+		}
+		res = RES_OK;
 		return res;
 
 	case DEV_USB :
