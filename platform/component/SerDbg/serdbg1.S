@@ -34,16 +34,16 @@ RunInstRAM:     //在内存中运行断点处的指令
     subi    sp, 4
     stw     r15, (sp)
 
-    //当前PSR
-    mfcr    r15, psr
-    mtcr    r15, epsr
-
     //跳到下一个PC地址，请在调用本函数前+2或+4
     lrw     r15, bkpt_stack_top
     ldw     r15, (r15, 196)
     mtcr    r15, epc
 
-    //恢复r15
+    //当前PSR
+    mfcr    r15, psr
+    mtcr    r15, epsr
+
+    //恢复r15和sp
     ldw     r15, (sp)
     addi    sp, 4
     rte
@@ -60,6 +60,7 @@ Load_Regs_Run:
 //r0: 原来的16bit内容
     lrw     r2, RunInstRAM
     sth     r0, (r2)
+    mtcr    r2, epc
 
     lrw     r15, bkpt_stack_top
     ldw     r3,  (r15, 196)
@@ -77,17 +78,18 @@ ll16b:
     sth     r1, (r2, 2)     //把后半字写入RAM的程序中
     stw     r3, (r15, 196)  //写入新epc
 
-    ldm     r0-r14, (r15)
+    ldm     r0-r13, (r15)
     addi    r15, 64
     ldm     r16-r31, (r15)
     addi    r15, 64
     fldms   vr0-vr15, (r15)
     addi    r15, 64
 
-    mtcr    r15, epsr
-    mtcr    r2, epc
+    ldw     r14, (r15)
+    mtcr    r14, epsr
 
     subi    r15,  192
+    ldw     r14, (r15, 56)
     ldw     r15, (r15, 60)
     rte
     .size   Load_Regs_Run, . - Load_Regs_Run
@@ -129,12 +131,5 @@ Breakpoint_Handler:
 
     lrw    r15, Load_Regs_Run   //C函数结束后返回
     lrw    r4,  Breakpoint_Handler_C
-    jsr    r4   //跳转到C函数
+    jmp    r4   //跳转到C函数
     .size   Breakpoint_Handler, . - Breakpoint_Handler
-
-    .align  2
-    .global Breakpoint_Handler2
-    .type   Breakpoint_Handler2, %function
-Breakpoint_Handler2:
-    jbsr    trap   //跳转到C函数
-    .size   Breakpoint_Handler2, . - Breakpoint_Handler2

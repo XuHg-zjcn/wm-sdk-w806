@@ -24,6 +24,24 @@ void Error_Handler(void);
 
 void gpio_x()
 {
+    printf("gpio_x\r\n");
+    HAL_Delay(300);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
+    HAL_Delay(300);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
+    HAL_Delay(300);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
+    HAL_Delay(300);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
+    HAL_Delay(500);
+    HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1);
+    HAL_Delay(500); 
+    HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1);
+}
+
+void gpio_x2()
+{
+    printf("gpio_x2\r\n");
     while (1)
     {
         HAL_Delay(300);
@@ -34,10 +52,6 @@ void gpio_x()
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
         HAL_Delay(300);
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
-        HAL_Delay(500);
-        HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1);
-        HAL_Delay(500); 
-        HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1);
     }
 }
 
@@ -45,9 +59,10 @@ int main(void)
 {
     SystemClock_Config(CPU_CLK_160M);
     GPIO_Init();
-    //printf("sbkpt=%d\r\n", set_BreakPoint(&gpio_x));
+    set_BreakPoint(&gpio_x2);
     printf("enter main\r\n");
     gpio_x();
+    gpio_x2();
 }
 
 static void GPIO_Init()

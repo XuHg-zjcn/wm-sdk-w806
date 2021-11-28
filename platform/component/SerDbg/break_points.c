@@ -12,6 +12,30 @@ typedef struct{
     void *epc;
 }BKPT_Regs;
 
+uint16_t write_0x0000(uint16_t *p)
+{
+    uint32_t offaddr = (unsigned)p & (INSIDE_FLS_BASE_ADDR - 1);
+    uint32_t secpos = offaddr / FLASH_CMD_START_CMD;
+    uint32_t pageaddr = secpos * INSIDE_FLS_SECTOR_SIZE;
+    uint32_t u16offset = offaddr % INSIDE_FLS_SECTOR_SIZE;
+    uint32_t buff_addr = RSA_BASE;
+    uint32_t i = 0;
+
+    FLASH->CMD_INFO = 0x6;
+	FLASH->CMD_START = FLASH_CMD_START_CMD;
+
+    M32(buff_addr) = 0x00000000;
+
+    FLASH->CMD_INFO = 0x80009002 | ((2 - 1) << 16);
+    FLASH->ADDR = (offaddr & 0x1FFFFFF);
+    FLASH->CMD_START = FLASH_CMD_START_CMD;
+
+
+    FLASH->CMD_INFO = 0x4;
+	FLASH->CMD_START = FLASH_CMD_START_CMD;
+    return *p;
+}
+
 int set_BreakPoint(void *p)
 {
     if((uint32_t)p & 0x01){
@@ -20,12 +44,14 @@ int set_BreakPoint(void *p)
         return -SDB_BKPT_FULL;
     }
     const uint16_t zero = 0;
-    if(HAL_FLASH_Write((uint32_t)p, (uint8_t*)&zero, 2) != HAL_OK){
-        return -SDB_FLASH_OP_ERR;
-    }
+    printf("%08x\r\n", (uint32_t)p);
+    //wm_flash_unlock();
+    //wm_flash_lock();
     bkpts[n_bkpt].p = p;
     bkpts[n_bkpt].old = *(uint16_t*)p;
     bkpts[n_bkpt].isSTOP = 0;
+    printf("%04x\r\n", write_0x0000((uint16_t*)p));
+    printf("%08x\r\n", (uint32_t)p);
     return n_bkpt++;
 }
 
@@ -68,17 +94,33 @@ int find_bkpt_num(void *p)
     return -1;
 }
 
-uint16_t Breakpoint_Handler_C(BKPT_Regs* regs)
+uint16_t Breakpoint_Handler_C(uint32_t* regs)
 {
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
-    int index = find_bkpt_num(regs->epc);
+    int index = find_bkpt_num(regs[49]);
+    for (uint8_t i = 0; i < 32; i++) {
+        printf("r%d: %08x\t", i, regs[i]);
+        if ((i % 5) == 4) {
+            printf("\n");
+        }
+    }
+    printf("\n");
+    for (uint8_t i = 0; i < 16; i++) {
+        printf("vr%d: %08x\t", i, regs[i+32]);
+        if ((i % 5) == 4) {
+            printf("\n");
+        }
+    }
+    printf("\n");
+    printf("epsr: %08x\n", regs[48]);
+    printf("epc : %08x\n", regs[49]);
     printf("bkpt index=%d\r\n", index);
-    printf("clear breakpoints=%d\r\n", clear_All_BreakPoints());
-    while(1);
+    //printf("clear breakpoints=%d\r\n", clear_All_BreakPoints());
     if(index < 0){
         Error_Handler();
         return 0x0000U;
     }else{
+        printf("old:  %04x\n", bkpts[index].old);
         return bkpts[index].old;
     }
 }

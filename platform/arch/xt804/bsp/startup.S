@@ -35,7 +35,7 @@ __Vectors:
     .long   Default_Handler
     .long   Default_Handler
     .long   Default_Handler
-    .long   Default_Handler
+    .long   Breakpoint_Handler
     .long   Default_Handler
     .long   Default_Handler
     .long   Default_Handler

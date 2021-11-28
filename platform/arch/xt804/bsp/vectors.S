@@ -101,6 +101,7 @@ Default_Handler:
     .set    \handler_name, Default_Handler
     .endm
 
+    def_irq_handler Breakpoint_Handler
     def_irq_handler tspend_handler
     def_irq_handler SDIO_IRQHandler            /*  0:  SDIO         */
     def_irq_handler MAC_IRQHandler             /*  1:  MAC          */
