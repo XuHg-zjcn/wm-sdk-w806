@@ -16,62 +16,49 @@
 
 #include <stdio.h>
 #include "wm_hal.h"
+#include "serdbg.h"
 
-#define DUTY_MAX 100
-#define DUTY_MIN 50
-PWM_HandleTypeDef pwm[3];
-int i, j, m[3] = {0}, d[3] = {DUTY_MIN, (DUTY_MIN + DUTY_MAX) / 2, DUTY_MAX - 1};
 
-static void PWM_Init(PWM_HandleTypeDef *hpwm, uint32_t channel);
+static void GPIO_Init();
 void Error_Handler(void);
+
+void gpio_x()
+{
+    while (1)
+    {
+        HAL_Delay(300);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
+        HAL_Delay(300);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
+        HAL_Delay(300);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
+        HAL_Delay(300);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
+        HAL_Delay(500);
+        HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1);
+        HAL_Delay(500); 
+        HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1);
+    }
+}
 
 int main(void)
 {
     SystemClock_Config(CPU_CLK_160M);
+    GPIO_Init();
+    //printf("sbkpt=%d\r\n", set_BreakPoint(&gpio_x));
     printf("enter main\r\n");
-
-    for (i = 2; i >= 0; i--)
-    {
-        PWM_Init(&pwm[i], PWM_CHANNEL_0 + i);
-        HAL_PWM_Start(&pwm[i]);
-    }
-
-    while (1)
-    {
-        for (i = 0; i < 3; i++)
-        {
-            if (m[i] == 0) // Increasing
-            {
-                HAL_PWM_Duty_Set(&pwm[i], d[i]++);
-                if (d[i] == DUTY_MAX)
-                {
-                    m[i] = 1;
-                }
-            }
-            else // Decreasing
-            {
-                HAL_PWM_Duty_Set(&pwm[i], d[i]--);
-                if (d[i] == DUTY_MIN)
-                {
-                    m[i] = 0;
-                }
-            }
-        }
-        HAL_Delay(20);
-    }
+    gpio_x();
 }
 
-static void PWM_Init(PWM_HandleTypeDef *hpwm, uint32_t channel)
+static void GPIO_Init()
 {
-    hpwm->Instance = PWM;
-    hpwm->Init.AutoReloadPreload = PWM_AUTORELOAD_PRELOAD_ENABLE;
-    hpwm->Init.CounterMode = PWM_COUNTERMODE_EDGEALIGNED_DOWN;
-    hpwm->Init.Prescaler = 4;
-    hpwm->Init.Period = 99;    // Frequency = 40,000,000 / 4 / (99 + 1) = 100,000 = 100KHz
-    hpwm->Init.Pulse = 19;     // Duty Cycle = (19 + 1) / (99 + 1) = 20%
-    hpwm->Init.OutMode = PWM_OUT_MODE_INDEPENDENT; // Independent mode
-    hpwm->Channel = channel;
-    HAL_PWM_Init(hpwm);
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    __HAL_RCC_GPIO_CLK_ENABLE();
+    GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_PIN_SET);
 }
 
 void Error_Handler(void)
