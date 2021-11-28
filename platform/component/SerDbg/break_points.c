@@ -94,26 +94,26 @@ int find_bkpt_num(void *p)
     return -1;
 }
 
-uint16_t Breakpoint_Handler_C(uint32_t* regs)
+uint16_t Breakpoint_Handler_C(BKPT_Regs* regs)
 {
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
-    int index = find_bkpt_num(regs[49]);
+    int index = find_bkpt_num(regs->epc);
     for (uint8_t i = 0; i < 32; i++) {
-        printf("r%d: %08x\t", i, regs[i]);
+        printf("r%d: %08x\t", i, regs->rx[i]);
         if ((i % 5) == 4) {
             printf("\n");
         }
     }
     printf("\n");
     for (uint8_t i = 0; i < 16; i++) {
-        printf("vr%d: %08x\t", i, regs[i+32]);
+        printf("vr%d: %08x\t", i, regs->vrx[i]);
         if ((i % 5) == 4) {
             printf("\n");
         }
     }
     printf("\n");
-    printf("epsr: %08x\n", regs[48]);
-    printf("epc : %08x\n", regs[49]);
+    printf("epsr: %08x\n", regs->epsr);
+    printf("epc : %08x\n", regs->epc);
     printf("bkpt index=%d\r\n", index);
     //printf("clear breakpoints=%d\r\n", clear_All_BreakPoints());
     if(index < 0){
