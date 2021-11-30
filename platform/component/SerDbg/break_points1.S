@@ -66,7 +66,7 @@ Load_Regs_Run:
     ldw     r3,  (r15, 196)
     addi    r3,  2
 
-    cmphsi  r0, 0x8000
+    cmphsi  r0, 0xc000
     movi    r1, 0x4000      //恢复空指令
     bf      ll16b           //不是32位指令，跳过步骤
 
