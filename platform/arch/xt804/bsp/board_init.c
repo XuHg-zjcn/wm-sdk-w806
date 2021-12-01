@@ -33,6 +33,9 @@
 #define UART_PARITYODD_BIT		(0x10)
 #define UART_BITSTOP_VAL		(0x03)                  /// 1 stop-bit; no crc; 8 data-bits
 
+
+UART_HandleTypeDef huart0;
+
 static void uart0Init (int bandrate)
 {
 	unsigned int bd;
@@ -45,15 +48,14 @@ static void uart0Init (int bandrate)
 	NVIC_DisableIRQ(UART0_IRQn);
 	NVIC_ClearPendingIRQ(UART0_IRQn);
 #endif
-
-	bd = (APB_CLK/(16*bandrate) - 1)|(((APB_CLK%(bandrate*16))*16/(bandrate*16))<<16);
-	WRITE_REG(UART0->BAUDR, bd);
-
-	WRITE_REG(UART0->LC, UART_BITSTOP_VAL | UART_TXEN_BIT | UART_RXEN_BIT);
-	WRITE_REG(UART0->FC, 0x00);    /* Disable afc */
-	WRITE_REG(UART0->DMAC, 0x00);  /* Disable DMA */
-	WRITE_REG(UART0->FIFOC, 0x00); /* one byte TX/RX */
-//	WRITE_REG(UART0->INTM, 0x00);  /* Disable INT */
+	huart0.Instance = UART0;
+	huart0.Init.BaudRate = 115200;
+	huart0.Init.WordLength = UART_WORDLENGTH_8B;
+    huart0.Init.StopBits = UART_STOPBITS_1;
+    huart0.Init.Parity = UART_PARITY_NONE;
+    huart0.Init.Mode = UART_MODE_TX | UART_MODE_RX;
+    huart0.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    HAL_UART_Init(&huart0);
 
 }
 #if 0

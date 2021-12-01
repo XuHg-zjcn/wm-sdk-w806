@@ -2,7 +2,7 @@ TOP_DIR = ../../..
 sinclude $(TOP_DIR)/tools/W806/conf.mk
 
 ifndef PDIR
-GEN_LIBS = libautodl$(LIB_EXT)
+GEN_LIBS = libatcmd$(LIB_EXT)
 endif
 
 #DEFINES +=
