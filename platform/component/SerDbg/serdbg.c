@@ -11,3 +11,18 @@
 
 #include "serdbg.h"
 
+
+
+void serdbg_parser_cmd()
+{
+    SerDbg_Cmd cmd = 0;
+    SERDBG_RECV(&cmd, 1);
+    switch(cmd){
+        case SDB_Read_aReg:
+            SDB_Read_aReg_proc();
+            break;
+        case SDB_Read_Mem:
+            SDB_Read_Mem_proc();
+            break;
+    }
+}

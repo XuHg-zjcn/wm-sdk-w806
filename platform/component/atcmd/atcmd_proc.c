@@ -51,6 +51,10 @@ int atcmd_parser_err_resp(char *buf, int err_code)
     return len;
 }
 
+static int atcmd_parser_sdb_proc(struct atcmd_parser_token_t *tok, char *res_resp, u32 *res_len)
+{
+    serdbg_parser_cmd();
+}
 
 static int atcmd_parser_reset_proc(struct atcmd_parser_token_t *tok, char *res_resp, u32 *res_len)
 {
@@ -249,6 +253,7 @@ static int atcmd_parser_qver_proc( struct atcmd_parser_token_t *tok, char *res_r
 
 struct atcmd_parser_t  atcmd_parser_tbl[] =
 {
+    { "SDB"  ,   atcmd_parser_sdb_proc },
     { "&REGR",   atcmd_parser_regr_proc },
     { "&REGW",   atcmd_parser_regw_proc },
    	{ "&FLSW",   atcmd_parser_flsw_proc},

@@ -16,6 +16,12 @@
 #define SERDBG_H
 
 #include <stdint.h>
+#include "wm_hal.h"
+
+extern UART_HandleTypeDef huart0;
+#define SERDBG_TIMEOUT  5
+#define SERDBG_SEND(p, size)  HAL_UART_Transmit(&huart0, (uint8_t*)(p), (size), SERDBG_TIMEOUT)
+#define SERDBG_RECV(p, size)  HAL_UART_Receive(&huart0, (uint8_t*)(p), (size), SERDBG_TIMEOUT)
 
 typedef enum{
     SDB_OK = 0,
@@ -23,6 +29,26 @@ typedef enum{
     SDB_INVAILD_BKPT,
     SDB_BKPT_FULL,
     SDB_FLASH_OP_ERR,
+    SDB_CRC_ERR
 }SerDbg_Stat;
+
+typedef enum{           // Param,                         ret
+    SDB_Read_Regs = 0,  //                              | data(4*50B)
+    SDB_Write_Regs,     // data(4*50B)                  | stat(1B)
+    SDB_Read_aReg,      // rx(1B)                       | data(4B)
+    SDB_Write_aReg,     // rx(1B), data(4B)             | stat(1B)
+    SDB_Read_Mem,       // addr(4B), len(2B)            | data(len), stat(1B)
+    SDB_Write_Mem,      // addr(4B), len(2B), data(lenB)| stat(1B)
+    SDB_Set_BKPT,       // addr(4B)                     | index(1B)
+    SDB_Upd_BKPT,       // index(1B), set(1B)           | stat(1B)
+    SDB_Get_BKPTS,      //                              | n(1B), set(nB)
+    SDB_Unset_BKPT,     // index(1B)                    | stat(1B)
+    SDB_Clear_BKPT,     //                              | stat(1B)
+    SDB_Contin_BKPT,    //                              |
+    SDB_About,          //                              | str
+    SDB_EXIT            //                              | stat(1B)
+}SerDbg_Cmd;
+
+void serdbg_parser_cmd();
 
 #endif
