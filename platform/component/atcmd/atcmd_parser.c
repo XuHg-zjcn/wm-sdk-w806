@@ -311,8 +311,3 @@ void atcmd_parser_IRQHandler(UART_HandleTypeDef* huart)
         }
     }
 }
-
-__attribute__((isr)) void UART0_IRQHandler(void)
-{
-    atcmd_parser_IRQHandler(&huart0);
-}

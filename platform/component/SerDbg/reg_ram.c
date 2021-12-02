@@ -1,28 +1,25 @@
 #include "reg_ram.h"
 #include "serdbg.h"
 
+extern uint32_t* uart0_irq_sp;
+
+#pragma pack(1)
 typedef struct
 {
     uint8_t *addr;
     uint16_t size;
 }MemOp;
+#pragma pack()
 
 void SDB_Read_aReg_proc()
 {
     uint8_t rx;
-    uint32_t data;
-    SERDBG_RECV(&rx, 1);
-    switch (rx){
-        case 49:
-            __asm__("mfcr %0, epsr" :"=r"(data));
-            break;
-        case 50:
-            __asm__("mfcr %0, epc" :"=r"(data));
-            break;
-        default:
-            return -1;
+    // only support uart inttrupt
+    // TODO: add read register in breakpoint
+    if(uart0_irq_sp){
+        SERDBG_RECV(&rx, 1);
+        SERDBG_SEND(uart0_irq_sp+rx, 4);
     }
-    SERDBG_SEND(&data, 4);
 }
 
 void SDB_Read_Mem_proc()

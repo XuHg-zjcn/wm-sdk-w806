@@ -23,8 +23,8 @@ class SerDbg:
             pass
         elif 53 <= rx < 69:
             rx -= 21
-        elif rx == 72:
-            rx = 50
+        elif rx == 0x48:
+            rx = 49
         else:
             raise ValueError('unsupported register')
         self.__send(bytes([2, rx]))
