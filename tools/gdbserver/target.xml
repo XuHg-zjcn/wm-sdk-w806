@@ -47,21 +47,21 @@
 <reg name="r30" bitsize="32" type="int32" regnum="30"/>
 <reg name="r31" bitsize="32" type="int32" regnum="31"/>
 
-<reg name="vr0" bitsize="32" type="float" regnum="53"/>
-<reg name="vr1" bitsize="32" type="float" regnum="54"/>
-<reg name="vr2" bitsize="32" type="float" regnum="55"/>
-<reg name="vr3" bitsize="32" type="float" regnum="56"/>
-<reg name="vr4" bitsize="32" type="float" regnum="57"/>
-<reg name="vr5" bitsize="32" type="float" regnum="58"/>
-<reg name="vr6" bitsize="32" type="float" regnum="59"/>
-<reg name="vr7" bitsize="32" type="float" regnum="60"/>
-<reg name="vr8" bitsize="32" type="float" regnum="61"/>
-<reg name="vr9" bitsize="32" type="float" regnum="62"/>
-<reg name="vr10" bitsize="32" type="float" regnum="63"/>
-<reg name="vr11" bitsize="32" type="float" regnum="64"/>
-<reg name="vr12" bitsize="32" type="float" regnum="65"/>
-<reg name="vr13" bitsize="32" type="float" regnum="66"/>
-<reg name="vr14" bitsize="32" type="float" regnum="67"/>
-<reg name="vr15" bitsize="32" type="float" regnum="68"/>
+<reg name="fr0" bitsize="32" type="float" regnum="40"/>
+<reg name="fr1" bitsize="32" type="float" regnum="41"/>
+<reg name="fr2" bitsize="32" type="float" regnum="42"/>
+<reg name="fr3" bitsize="32" type="float" regnum="43"/>
+<reg name="fr4" bitsize="32" type="float" regnum="44"/>
+<reg name="fr5" bitsize="32" type="float" regnum="45"/>
+<reg name="fr6" bitsize="32" type="float" regnum="46"/>
+<reg name="fr7" bitsize="32" type="float" regnum="47"/>
+<reg name="fr8" bitsize="32" type="float" regnum="48"/>
+<reg name="fr9" bitsize="32" type="float" regnum="49"/>
+<reg name="fr10" bitsize="32" type="float" regnum="50"/>
+<reg name="fr11" bitsize="32" type="float" regnum="51"/>
+<reg name="fr12" bitsize="32" type="float" regnum="52"/>
+<reg name="fr13" bitsize="32" type="float" regnum="53"/>
+<reg name="fr14" bitsize="32" type="float" regnum="54"/>
+<reg name="fr15" bitsize="32" type="float" regnum="55"/>
 <reg name="pc" bitsize="32" type="code_ptr" regnum="72"/>
 </target>

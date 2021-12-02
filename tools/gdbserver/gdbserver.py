@@ -5,16 +5,36 @@ import socket
 import struct
 from enum import Enum
 
+# 0x00-0x1f |  0-31 |  r0-31
+# 0x24 | 36 | lo
+# 0x25 | 37 | hi
+# 0x28-0x37 | 40-55 | fr0-15
+# 0x38-0x47 | 56-71 | vr0-15
+# 0x48 | 72 | pc
 
+# 0x59 | 89 | psr   | cr<0,0>
+# 0x5a | 90 | vbr   | cr<1,0>
+# 0x5b | 91 | epsr  | cr<2,0>
+# 0x5d | 93 | epc   | cr<4,0>
+# 0x66-0x78 | cr13-31
+
+# 
+# 0x
+# 0x8c-0x8f | profcr0-4
+# 0x90-0x9d | profsgr0-13
+# 0xa0-0xae | profagr0-14
+# 0xb0-0xbc | profxgr0-14
 def reg_gdb2num(rx):
     if 0 <= rx < 32:
         pass
-    elif 53 <= rx < 69:
-        rx -= 21
+    elif 40 <= rx < 56:
+        rx -= 8
     elif rx == 0x48:
         rx = 49
+    elif rx == 0x59:
+        rx = 48
     else:
-        raise ValueError('unsupported register r{rx}')
+        rx = -1 #ValueError(f'unsupported register r{rx}')
     return rx
 
 class SerDbg_Cmd(Enum): # Param,                       | ret           
@@ -58,7 +78,7 @@ class SerDbg:
 
     def Read_Regs(self):
         self.__send_cmd('Read_Reg', ('B', 0), ('B', 16))
-        return self.__recv(4*16)
+        return self.__recv(4*16).hex()
 
     def Write_Regs(self):
         assert len(data) % 4 == 0, 'invaild reg numbers'
@@ -67,8 +87,10 @@ class SerDbg:
 
     def Read_aReg(self, rx):
         rx = reg_gdb2num(rx)
+        if rx < 0:
+            return "E05"
         self.__send_cmd('Read_Reg', ('B', rx), ('B', rx+1))
-        return self.__recv(4)
+        return self.__recv(4).hex()
 
     def Write_aReg(self, rx, data):
         rx = reg_gdb2num(rx)
@@ -77,7 +99,7 @@ class SerDbg:
 
     def Read_Mem(self, addr, size):
         self.__send_cmd('Read_Mem', ('I', addr), ('H', size))
-        return self.__recv(size)
+        return self.__recv(size).hex()
 
     def Write_Mem(self, addr, data):
         self.__send_cmd('Read_Mem', ('I', addr), ('H', len(data)))
@@ -92,18 +114,18 @@ class GDBServer:
 
     def recv(self):
         while not self.tmp:
-            recv = self.conn.recv(1024)
-            l = recv.split(b'$')
-            l = list(map(lambda x:x.rstrip(b'+').rstrip(b'-'), l))
-            while b'' in l:
-                l.remove(b'')
+            recv = self.conn.recv(1024).decode()
+            l = recv.split('$')
+            l = list(map(lambda x:x.rstrip('+').rstrip('-'), l))
+            while '' in l:
+                l.remove('')
             for s in l:
-                s2 = s.split(b'#')
+                s2 = s.split('#')
                 if len(s2) == 0:
                     continue
                 assert len(s2) == 2, f"can't cut checksum, {s2}"
                 data, chksum = s2
-                dsum = sum(data)&0xff
+                dsum = sum(data.encode())&0xff
                 csum = int(chksum, base=16)
                 if dsum != csum:
                     raise ValueError('checksum error')
@@ -116,22 +138,22 @@ class GDBServer:
 
     def __send(self, data):
         print('<', data)
-        sumx = sum(data)&0xff
-        data = b'+$' + data + (f'#{sumx:02x}').encode()
-        self.conn.send(data)
+        sumx = sum(data.encode())&0xff
+        data = f'+${data}#{sumx:02x}'
+        self.conn.send(data.encode())
 
     def send_file(self, cmd, fn):
         print(cmd)
-        p, s = cmd.split(b',')
+        p, s = cmd.split(',')
         p = int(p, base=16)
         s = int(s, base=16)
-        with open(fn, 'rb') as f:
+        with open(fn, 'r') as f:
             while True:
                 data = f.read(s)
                 if len(data) == s:
-                    self.__send(b'm'+data)
+                    self.__send('m'+data)
                 else:
-                    self.__send(b'l'+data)
+                    self.__send('l'+data)
                     break
                 # TODO: 完善多次读取
 
@@ -139,58 +161,57 @@ class GDBServer:
         while True:
             recv = self.recv()
             print('>', recv)
-            if recv.find(b'qSupported') >= 0:
-                self.__send(b'PacketSize=1000;qXfer:features:read+')
-            if recv.find(b'qXfer:features:read:target.xml:') >= 0:
-                x = recv.find(b'xml:')
+            if recv.find('qSupported') >= 0:
+                self.__send('PacketSize=1000;qXfer:features:read+')
+            if recv.find('qXfer:features:read:target.xml:') >= 0:
+                x = recv.find('xml:')
                 self.send_file(recv[x+4:], 'target.xml')
-            if recv == b'vMustReplyEmpty':
-                self.__send(b'')
-            if recv.find(b'Hg') >= 0:
-                self.__send(b'OK')
-            if recv.find(b'qL1200') >= 0:
-                self.__send(b'')
-            if recv == b'qTStatus':
-                self.__send(b'T0')
-            if recv == b'qTfV':
-                self.__send(b'l')
-            if recv == b'udebugprintport':
-                self.__send(b'1234')
-            if recv == b'?':
-                self.__send(b'S05')
-            if recv == b'qfThreadInfo':
-                self.__send(b'm0')
-            if recv == b'qsThreadInfo':
-                self.__send(b'l')
-            if recv == b'Hc-1':
-                self.__send(b'OK')
-            if recv == b'qAttached':
-                self.__send(b'1')
-            if recv == b'qC':
-                self.__send(b'QC00')
-            if recv == b'qOffsets':
-                self.__send(b'')
-            if recv == b'g':
-                self.__send(self.Read_Regs().hex().encode())
-            if recv[0] == ord('p'):
+            if recv == 'vMustReplyEmpty':
+                self.__send('')
+            if recv.find('Hg') >= 0:
+                self.__send('OK')
+            if recv.find('qL1200') >= 0:
+                self.__send('')
+            if recv == 'qTStatus':
+                self.__send('T0')
+            if recv == 'qTfV':
+                self.__send('l')
+            if recv == 'udebugprintport':
+                self.__send('1234')
+            if recv == '?':
+                self.__send('S05')
+            if recv == 'qfThreadInfo':
+                self.__send('m0')
+            if recv == 'qsThreadInfo':
+                self.__send('l')
+            if recv == 'Hc-1':
+                self.__send('OK')
+            if recv == 'qAttached':
+                self.__send('1')
+            if recv == 'qC':
+                self.__send('QC00')
+            if recv == 'qOffsets':
+                self.__send('')
+            if recv == 'g':
+                self.__send(self.Read_Regs())
+            if recv[0] == 'p':
                 rx = int(recv[1:], base=16)
                 data = self.Read_aReg(rx)
-                self.__send(data.hex().encode())
-            if recv[0] == ord('m'):
-                addr, size = recv[1:].split(b',')
-                addr = addr.decode()
+                self.__send(data)
+            if recv[0] == 'm':
+                addr, size = recv[1:].split(',')
                 if len(addr) % 2 == 1:
                     addr = '0' + addr
                 addr = bytes.fromhex(addr)
                 addr = int.from_bytes(addr, 'little')
                 size = int(size, base=16)
                 data = self.Read_Mem(addr, size)
-                self.__send(data.hex().encode())
-            if recv == b'qTfP':
-                self.__send(b'l')
-            if recv == b'qSymbol::':
-                self.__send(b'OK')
-            if recv == b'D':
+                self.__send(data)
+            if recv == 'qTfP':
+                self.__send('l')
+            if recv == 'qSymbol::':
+                self.__send('OK')
+            if recv == 'D':
                 break
 
     def read_areg(self, rx):
