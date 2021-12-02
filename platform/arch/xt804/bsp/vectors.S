@@ -54,33 +54,32 @@ g_trap_sp:
 trap:
     psrset  ee
 
-    subi    sp, 4
-    stw     r13, (sp)
-    addi    sp, 4
+    subi    sp, 4      //栈-1
+    stw     r13, (sp)  //把r13保存到栈下一个值
+    addi    sp, 4      //栈+1
 
-    lrw     r13, g_trap_sp
-    stw     sp, (r13)
+    lrw     r13, g_trap_sp //栈指针储存的地址
+    stw     sp, (r13)      //保存栈指针
 
-    lrw     sp, g_top_trapstack
+    lrw     sp, g_top_trapstack  //用来保存
 
     subi    sp, 72
-    stm     r0-r12, (sp)
+    stm     r0-r12, (sp)   //保存r0-r12
 
-    lrw     r0, g_trap_sp
-    ldw     r0, (r0)
+    lrw     r0, g_trap_sp  //栈指针储存的地址
+    ldw     r0, (r0)       //获取栈指针
 
     stw     r0, (sp, 56) /* save r14 */
 
     subi    r0, 4
-    ldw     r13, (r0)
-    stw     r13, (sp, 52)
+    ldw     r13, (r0)     //刚保存的r13
+    stw     r13, (sp, 52) //save r13
 
-    stw     r15, (sp, 60)
+    stw     r15, (sp, 60) //save r15
     mfcr    r0, epsr
-    stw     r0, (sp, 64)
+    stw     r0, (sp, 64)  //save epsr
     mfcr    r0, epc
-    stw     r0, (sp, 68)
-
+    stw     r0, (sp, 68)  //save epc
     mov     r0, sp
 
     jbsr    trap_c
