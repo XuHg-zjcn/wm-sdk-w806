@@ -32,13 +32,13 @@ typedef enum{
     SDB_CRC_ERR
 }SerDbg_Stat;
 
-typedef enum{           // Param,                         ret
-    SDB_Read_Regs = 0,  //                              | data(4*50B)
-    SDB_Write_Regs,     // data(4*50B)                  | stat(1B)
-    SDB_Read_aReg,      // rx(1B)                       | data(4B)
-    SDB_Write_aReg,     // rx(1B), data(4B)             | stat(1B)
+typedef enum{           // Param,                       | ret
+    SDB_Read_Reg = 0,   // rx-ry(2B)                    | data(4nB)
+    SDB_Write_Reg,      // rx-ry(2B), data(4nB)         | stat(1B)
     SDB_Read_Mem,       // addr(4B), len(2B)            | data(len), stat(1B)
     SDB_Write_Mem,      // addr(4B), len(2B), data(lenB)| stat(1B)
+    SDB_Read_Flash,     //
+    SDB_Write_Flash,    //
     SDB_Set_BKPT,       // addr(4B)                     | index(1B)
     SDB_Upd_BKPT,       // index(1B), set(1B)           | stat(1B)
     SDB_Get_BKPTS,      //                              | n(1B), set(nB)

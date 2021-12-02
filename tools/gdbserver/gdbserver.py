@@ -3,36 +3,86 @@ import sys
 import serial
 import socket
 import struct
+from enum import Enum
 
+
+def reg_gdb2num(rx):
+    if 0 <= rx < 32:
+        pass
+    elif 53 <= rx < 69:
+        rx -= 21
+    elif rx == 0x48:
+        rx = 49
+    else:
+        raise ValueError('unsupported register r{rx}')
+    return rx
+
+class SerDbg_Cmd(Enum): # Param,                       | ret           
+    Read_Reg = 0        # rx-ry(2B)                    | data(4nB)
+    Write_Reg = 1       # rx-ry(2B), data(4nB)         | stat(1B)
+    Read_Mem = 2        # addr(4B), len(2B)            | data(len), stat(1B)
+    Write_Mem = 3       # addr(4B), len(2B), data(lenB)| stat(1B)
+    Read_Flash = 4      #
+    Write_Flash = 5     #
+    Set_BKPT = 6        # addr(4B)                     | index(1B)
+    Upd_BKPT = 7        # index(1B), set(1B)           | stat(1B)
+    Get_BKPTS = 8       #                              | n(1B), set(nB)
+    Unset_BKPT = 9      # index(1B)                    | stat(1B)
+    Clear_BKPT = 10     #                              | stat(1B)
+    Contin_BKPT = 11    #                              |
+    About = 12          #                              | str
+    EXIT = 14           #                              | stat(1B)
 
 class SerDbg:
     def __init__(self, ser):
         self.ser = ser
         #self.stat = False
     
-    def __send(self, data):
+    def __send_cmd(self, name, *args):
         #if not self.stat:
         self.ser.write(b'AT+SDB\r\n')
+        sf = '<B'
+        sd = [SerDbg_Cmd[name].value]
+        for c, data in args:
+            sf += c
+            sd.append(data)
+        self.ser.write(struct.pack(sf, *sd))
+
+    def __send_dat(self, data):
         self.ser.write(data)
 
     def __recv(self, size):
-        return self.ser.read(size)
-    
-    def read_areg(self, rx):
-        if 0 <= rx < 32:
-            pass
-        elif 53 <= rx < 69:
-            rx -= 21
-        elif rx == 0x48:
-            rx = 49
-        else:
-            raise ValueError('unsupported register')
-        self.__send(bytes([2, rx]))
+        data = self.ser.read(size)
+        print('r', data.hex())
+        return data
+
+    def Read_Regs(self):
+        self.__send_cmd('Read_Reg', ('B', 0), ('B', 16))
+        return self.__recv(4*16)
+
+    def Write_Regs(self):
+        assert len(data) % 4 == 0, 'invaild reg numbers'
+        self.__send_cmd('Write_Reg', ('B', 0), ('B', 16))
+        self.__send_dat(4*16)
+
+    def Read_aReg(self, rx):
+        rx = reg_gdb2num(rx)
+        self.__send_cmd('Read_Reg', ('B', rx), ('B', rx+1))
         return self.__recv(4)
 
-    def read_mem(self, addr, size):
-        self.__send(struct.pack('<BIH', 4, addr, size))
+    def Write_aReg(self, rx, data):
+        rx = reg_gdb2num(rx)
+        self.__send_cmd('Write_Reg', ('B', rx), ('B', rx+1))
+        self.__send_dat(data)
+
+    def Read_Mem(self, addr, size):
+        self.__send_cmd('Read_Mem', ('I', addr), ('H', size))
         return self.__recv(size)
+
+    def Write_Mem(self, addr, data):
+        self.__send_cmd('Read_Mem', ('I', addr), ('H', len(data)))
+        self.__send_dat(data)
+
 
 
 class GDBServer:
@@ -121,22 +171,27 @@ class GDBServer:
             if recv == b'qOffsets':
                 self.__send(b'')
             if recv == b'g':
-                self.__send(b'x'*8*50)
+                self.__send(self.Read_Regs().hex().encode())
             if recv[0] == ord('p'):
                 rx = int(recv[1:], base=16)
-                data = self.read_areg(rx)
+                data = self.Read_aReg(rx)
                 self.__send(data.hex().encode())
             if recv[0] == ord('m'):
                 addr, size = recv[1:].split(b',')
+                addr = addr.decode()
+                if len(addr) % 2 == 1:
+                    addr = '0' + addr
                 addr = bytes.fromhex(addr)
                 addr = int.from_bytes(addr, 'little')
                 size = int(size, base=16)
-                data = self.read_mem(addr, size)
-                self.__send(data.hex())
+                data = self.Read_Mem(addr, size)
+                self.__send(data.hex().encode())
             if recv == b'qTfP':
                 self.__send(b'l')
             if recv == b'qSymbol::':
                 self.__send(b'OK')
+            if recv == b'D':
+                break
 
     def read_areg(self, rx):
         pass
