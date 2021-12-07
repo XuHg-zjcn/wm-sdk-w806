@@ -59,7 +59,7 @@ int main(void)
 {
     SystemClock_Config(CPU_CLK_160M);
     GPIO_Init();
-    set_BreakPoint(&gpio_x2);
+    //set_BreakPoint(&gpio_x2);
     printf("enter main\r\n");
     gpio_x();
     gpio_x2();

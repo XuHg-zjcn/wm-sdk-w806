@@ -18,4 +18,7 @@ SerDbg_Stat unset_BreakPoint(int x);
 SerDbg_Stat clear_All_BreakPoints();
 SerDbg_Stat debug_off();
 
+void SDB_Set_BKPT_op();
+void SDB_Unset_BKPT_op();
+
 #endif

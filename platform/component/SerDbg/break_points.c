@@ -124,3 +124,19 @@ uint16_t Breakpoint_Handler_C(BKPT_Regs* regs)
         return bkpts[index].old;
     }
 }
+
+void SDB_Set_BKPT_op()
+{
+    void *p;
+    SERDBG_RECV(&p, sizeof(p));
+    set_BreakPoint(p);
+}
+
+void SDB_Unset_BKPT_op()
+{
+    uint8_t i;
+    SERDBG_RECV(&i, sizeof(i));
+    if(i < SERDBG_MAX_BKPT){
+        unset_BreakPoint(i);
+    }
+}

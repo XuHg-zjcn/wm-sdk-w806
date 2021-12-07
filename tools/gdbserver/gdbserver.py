@@ -162,7 +162,7 @@ class GDBServer:
             recv = self.recv()
             print('>', recv)
             if recv.find('qSupported') >= 0:
-                self.__send('PacketSize=1000;qXfer:features:read+')
+                self.__send('PacketSize=1000;multiprocess+;swbreak+;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;QThreadEvents+;no-resumed+')
             if recv.find('qXfer:features:read:target.xml:') >= 0:
                 x = recv.find('xml:')
                 self.send_file(recv[x+4:], 'target.xml')
@@ -173,7 +173,7 @@ class GDBServer:
             if recv.find('qL1200') >= 0:
                 self.__send('')
             if recv == 'qTStatus':
-                self.__send('T0')
+                self.__send('T1')
             if recv == 'qTfV':
                 self.__send('l')
             if recv == 'udebugprintport':
@@ -200,16 +200,17 @@ class GDBServer:
                 self.__send(data)
             if recv[0] == 'm':
                 addr, size = recv[1:].split(',')
-                if len(addr) % 2 == 1:
-                    addr = '0' + addr
-                addr = bytes.fromhex(addr)
-                addr = int.from_bytes(addr, 'little')
+                addr = int(addr, base=16)
                 size = int(size, base=16)
                 data = self.Read_Mem(addr, size)
                 self.__send(data)
             if recv == 'qTfP':
                 self.__send('l')
             if recv == 'qSymbol::':
+                self.__send('OK')
+            if recv == 'vCont?':
+                self.__send('vCont;c')
+            if recv == 'vCont;c':
                 self.__send('OK')
             if recv == 'D':
                 break
@@ -230,7 +231,7 @@ class SDBServer(SerDbg, GDBServer):
 if __name__ == '__main__':
     ser = serial.Serial('/dev/'+sys.argv[1], 115200)
     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    soc.bind(('127.0.0.1', 3335))
+    soc.bind(('127.0.0.1', 3334))
     soc.listen(1)
     
     conn, addr = soc.accept()
