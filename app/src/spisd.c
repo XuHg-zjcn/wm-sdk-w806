@@ -337,3 +337,24 @@ u8 SdWriteDisk(u8*buf,u32 sector,u8 cnt)
     SD_DisSelect();//取消片选
     return r1;//
 }
+
+int MMC_disk_status()
+{
+    return 0;
+}
+
+int MMC_disk_initialize()
+{
+    printf("SdInitialize %d\r\n", SdInitialize());
+    return 0;
+}
+
+int MMC_disk_read(uint8_t *buff, uint32_t sector, uint8_t cnt)
+{
+    return SdReadDisk(buff, sector, cnt);
+}
+
+int MMC_disk_write(buff, sector, count)
+{
+    return SdWriteDisk(buff, sector, count);
+}

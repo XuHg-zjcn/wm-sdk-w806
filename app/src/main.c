@@ -28,27 +28,6 @@ int i, j, m[3] = {0}, d[3] = {DUTY_MIN, (DUTY_MIN + DUTY_MAX) / 2, DUTY_MAX - 1}
 
 void Error_Handler(void);
 
-int MMC_disk_status()
-{
-    return 0;
-}
-
-int MMC_disk_initialize()
-{
-    printf("SdInitialize %d\r\n", SdInitialize());
-    return 0;
-}
-
-int MMC_disk_read(uint8_t *buff, uint32_t sector, uint8_t cnt)
-{
-    return SdReadDisk(buff, sector, cnt);
-}
-
-int MMC_disk_write(buff, sector, count)
-{
-    return SdWriteDisk(buff, sector, count);
-}
-
 uint8_t SdSpiReadWriteByte(uint8_t write_byte)
 {
     uint8_t read_byte;
