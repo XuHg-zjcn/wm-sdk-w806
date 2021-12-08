@@ -18,13 +18,9 @@
 #include "wm_hal.h"
 #include "ff.h"
 
-#define DUTY_MAX 100
-#define DUTY_MIN 50
 #define TEST_DEBUG printf
 
 SPI_HandleTypeDef hspi;
-PWM_HandleTypeDef pwm[3];
-int i, j, m[3] = {0}, d[3] = {DUTY_MIN, (DUTY_MIN + DUTY_MAX) / 2, DUTY_MAX - 1};
 
 void Error_Handler(void);
 
@@ -53,13 +49,8 @@ static void SPI_Init(void)
 
 void SdIOInit(void)
 {
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-    GPIO_InitStruct.Pin = GPIO_PIN_0;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    //SPI和CS引脚会在SPI_Init中初始化,这里就不用了
+	//仍然保留这个函数, spisd.c里要调用
 }
 
 void Write_CS_Pin(int x)
@@ -248,7 +239,6 @@ int main(void)
 {
     SystemClock_Config(CPU_CLK_160M);
     printf("enter main\r\n");
-    SdIOInit();
     SPI_Init();
     fatfs_func();
     while (1);
