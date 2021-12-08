@@ -1,7 +1,8 @@
 /**
  * @file spisd.c
- * @brief spi SD card driver
+ * @brief SPI SD card driver for FATFS
  * @note copy from https://www.cnblogs.com/dengxiaojun/p/4279439.html
+ * @note 为了方便移植,本文件作为跨平台驱动,不写具体平台SPI驱动
  */
 
 #include "spisd.h"
@@ -26,7 +27,7 @@ extern void SdSpiSpeedHigh(void);
 extern void SdIOInit(void);
 
 
-//替换调这两个函数,提高读写速度
+//覆盖掉这两个函数,提高读写速度
 __attribute__((weak)) void SdSpiReadData(u8* data, u32 len)
 {
     while(len--){
@@ -99,7 +100,7 @@ u8 SdGetResponse(u8 Response)
 u8 SdRecvData(u8*buf,u16 len)
 {			  	  
     if(SdGetResponse(0xFE))return 1;  //等待SD卡发回数据起始令牌0xFE
-    SdSpiReadData(buf, len);          //发送数据
+    SdSpiReadData(buf, len);
     //下面是2个伪CRC（dummy CRC）
     SdSpiReadWriteByte(0xFF);
     SdSpiReadWriteByte(0xFF);									  					    
@@ -119,7 +120,7 @@ u8 SdSendBlock(u8*buf,u8 cmd)
     SdSpiReadWriteByte(cmd);
     if(cmd!=0XFD)                    //不是结束指令
     {
-        SdSpiWriteData(buf, 512);    //发送512字节数据
+        SdSpiWriteData(buf, 512);//提高速度,减少函数传参时间
         SdSpiReadWriteByte(0xFF);    //忽略crc
         SdSpiReadWriteByte(0xFF);
         t=SdSpiReadWriteByte(0xFF);  //接收响应
