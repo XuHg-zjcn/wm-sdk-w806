@@ -25,8 +25,10 @@ extern void SdSpiSpeedHigh(void);
 
 extern void SdIOInit(void);
 
-//等待卡准备好
-//返回值:0,准备好了;其他,错误代码
+/**
+ * @brief 等待卡准备好
+ * @retval 0,准备好了;其他,错误代码
+ */
 static u8 SdWaitReady(void)
 {
     u32 t=0;
@@ -38,15 +40,19 @@ static u8 SdWaitReady(void)
     return 1;
 }
 
-//取消选择,释放SPI总线
+/**
+ * @brief 取消选择,释放SPI总线
+ */
 void SD_DisSelect(void)
 {
     Write_CS_Pin(1);
     SdSpiReadWriteByte(0xff);  //提供额外的8个时钟
 }
 
-//选择sd卡,并且等待卡准备OK
-//返回值:0,成功;1,失败;
+/**
+ * @brief  选择sd卡,并且等待卡准备OK
+ * @retval 0,成功;1,失败;
+ */
 u8 SdSelect(void)
 {
     Write_CS_Pin(0);
@@ -55,10 +61,11 @@ u8 SdSelect(void)
     return 1;                      //等待失败
 }
 
-//等待SD卡回应
-//Response:要得到的回应值
-//返回值:0,成功得到了该回应值
-//    其他,得到回应值失败    期待得到的回应值
+/**
+ * @brief  等待SD卡回应
+ * @param  Response:要得到的回应值
+ * @retval 0,成功得到了该回应值;其他,得到回应值失败    期待得到的回应值
+ */
 u8 SdGetResponse(u8 Response)
 {
     u16 Count=0xFFF;                           //等待次数	   						  
@@ -67,11 +74,12 @@ u8 SdGetResponse(u8 Response)
     else return MSD_RESPONSE_NO_ERROR;         //正确回应
 }
 
-//从sd卡读取一个数据包的内容
-//buf:数据缓存区
-//len:要读取的数据长度.
-//返回值:0,成功;其他,失败;
-//0XFE数据起始令牌	
+/**
+ * @brief  从sd卡读取一个数据包的内容
+ * @param  buf : 数据缓存区
+ * @param  len : 要读取的数据长度.
+ * @retval 0,成功;0XFE数据起始令牌;其他,失败
+ */
 u8 SdRecvData(u8*buf,u16 len)
 {			  	  
     if(SdGetResponse(0xFE))return 1;  //等待SD卡发回数据起始令牌0xFE
@@ -86,10 +94,12 @@ u8 SdRecvData(u8*buf,u16 len)
     return 0;//读取成功
 }
 
-//向sd卡写入一个数据包的内容 512字节
-//buf:数据缓存区
-//cmd:指令
-//返回值:0,成功;其他,失败;	
+/**
+ * @brief  向sd卡写入一个数据包的内容 512字节
+ * @param  buf:数据缓存区
+ * @param  cmd:指令
+ * @retval 0,成功;其他,失败;
+*/
 u8 SdSendBlock(u8*buf,u8 cmd)
 {	
     u16 t;		  	  
@@ -107,11 +117,13 @@ u8 SdSendBlock(u8*buf,u8 cmd)
 }
 
 
-//向SD卡发送一个命令
-//输入: u8 cmd   命令 
-//      u32 arg  命令参数
-//      u8 crc   crc校验值	   
-//返回值:SD卡返回的响应															  
+/**
+ * @brief  向SD卡发送一个命令
+ * @param  cmd : 命令
+ * @param  arg : 命令参数
+ * @param  crc : crc校验值
+ * @retval SD卡返回的响应
+ */
 u8 SdSendCmd(u8 cmd, u32 arg, u8 crc)
 {
     u8 r1;	
@@ -136,10 +148,11 @@ u8 SdSendCmd(u8 cmd, u32 arg, u8 crc)
     return r1;
 }	
 
-//获取SD卡的CID信息，包括制造商信息
-//输入: u8 *cid_data(存放CID的内存，至少16Byte）	  
-//返回值:0：NO_ERR
-//		 1：错误														   
+/**
+ * @brief  获取SD卡的CID信息，包括制造商信息
+ * @param  cid_data : 存放CID的内存，至少16Byte
+ * @retval 0：NO_ERR, 1：错误
+ */
 u8 SdGetCID(u8 *cid_data)
 {
     u8 r1;	   
@@ -154,10 +167,11 @@ u8 SdGetCID(u8 *cid_data)
     else return 0;
 }	
 
-//获取SD卡的CSD信息，包括容量和速度信息
-//输入:u8 *cid_data(存放CID的内存，至少16Byte）	    
-//返回值:0：NO_ERR
-//		 1：错误														   
+/**
+ * @brief  获取SD卡的CSD信息，包括容量和速度信息
+ * @param  csd_data : 存放CID的内存，至少16Byte
+ * @retval 0：NO_ERR, 1：错误
+ */
 u8 SdGetCSD(u8 *csd_data)
 {
     u8 r1;	 
@@ -171,10 +185,11 @@ u8 SdGetCSD(u8 *csd_data)
     else return 0;
 }
 
-//获取SD卡的总扇区数（扇区数）   
-//返回值:0： 取容量出错 
-//其他:SD卡的容量(扇区数/512字节)
-//每扇区的字节数必为512，因为如果不是512，则初始化不能通过.														  
+/**
+ * @brief  获取SD卡的总扇区数（扇区数）
+ * @retval 0,取容量出错, 其他:SD卡的容量(扇区数/512字节)
+ * @note   每扇区的字节数必为512，因为如果不是512，则初始化不能通过.
+ */
 u32 SdGetSectorCount(void)
 {
     u8 csd[16];
@@ -197,10 +212,10 @@ u32 SdGetSectorCount(void)
     return Capacity;
 }
 
-
-//初始化SD卡
-//返回值:0,正常.
-//其他,不正常.
+/**
+ * @brief  初始化SD卡
+ * @retval 0,正常;其他,不正常.
+ */
 u8 SdInitialize(void)
 {
     u8 r1;      // 存放SD卡的返回值
@@ -268,13 +283,13 @@ u8 SdInitialize(void)
     return 0xaa;//其他错误
 }
 
-
-
-//读SD卡
-//buf:数据缓存区
-//sector:扇区
-//cnt:扇区数
-//返回值:0,ok;其他,失败.
+/**
+ * @brief 读SD卡
+ * @param  buf    : 数据缓存区
+ * @param  sector : 起始扇区
+ * @param  cnt    : 扇区数
+ * @retval 0,ok;其他,失败.
+ */
 u8 SdReadDisk(u8*buf,u32 sector,u8 cnt)
 {
     u8 r1;
@@ -300,11 +315,13 @@ u8 SdReadDisk(u8*buf,u32 sector,u8 cnt)
     return r1;                             //
 }
 
-//写SD卡
-//buf:数据缓存区
-//sector:起始扇区
-//cnt:扇区数
-//返回值:0,ok;其他,失败.
+/**
+ * @brief 写SD卡
+ * @param  buf    : 数据缓存区
+ * @param  sector : 起始扇区
+ * @param  cnt    : 扇区数
+ * @retval 0,ok;其他,失败.
+ */
 u8 SdWriteDisk(u8*buf,u32 sector,u8 cnt)
 {
     u8 r1;
