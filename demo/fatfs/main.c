@@ -6,25 +6,15 @@
 #define TEST_DEBUG printf
 
 SPI_HandleTypeDef hspi;
+FATFS fs;               //FatFs文件系统对象
+FIL fnew;               //文件对象
+FRESULT res_sd;         //文件操作结果
+UINT fnum;              //文件成功读写数量
+BYTE ReadBuffer[256] = {0};
+BYTE work[FF_MAX_SS];
+BYTE WriteBuffer[] = "成功移植了FatFs文件系统！\r\n"; //写缓存区
 
 void Error_Handler(void);
-
-uint8_t SdSpiReadWriteByte(uint8_t write_byte)
-{
-    uint8_t read_byte;
-    HAL_SPI_TransmitReceive(&hspi, &write_byte, &read_byte, 1, 1000);
-    return read_byte;
-}
-
-void SdSpiReadData(uint8_t* data, uint32_t len)
-{
-	HAL_SPI_Receive(&hspi, data, len, 1000);
-}
-
-void SdSpiWriteData(uint8_t* data, uint32_t len)
-{
-	HAL_SPI_Transmit(&hspi, data, len, 1000);
-}
 
 static void SPI_Init(void)
 {
@@ -42,53 +32,10 @@ static void SPI_Init(void)
     }
 }
 
-void SdIOInit(void)
-{
-    //SPI和CS引脚会在SPI_Init中初始化,这里就不用了
-	//仍然保留这个函数, spisd.c里要调用
-}
-
-void Write_CS_Pin(int x)
-{
-    if(x){
-        __HAL_SPI_SET_CS_HIGH(&hspi);
-    }else{
-        __HAL_SPI_SET_CS_LOW(&hspi);
-    }
-}
-
-void SdSpiSpeedLow(void)
-{
-    hspi.Init.BaudRatePrescaler = 60 - 1;
-    if (HAL_SPI_Init(&hspi) != HAL_OK)
-    {
-        Error_Handler();
-    }
-}
-
-void SdSpiSpeedHigh(void)
-{
-    hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
-    if (HAL_SPI_Init(&hspi) != HAL_OK)
-    {
-        Error_Handler();
-    }
-}
-
 //FAT功能测试：格式化测试，文件写入测试，文件读取测试（基本功能）
 //目前有点小问题，不清楚原因。有时候复位后会卡住，需要将SD卡断电后再上电才能识别。
-int fatfs_func(void)
+static int FatFs_Init(void)
 {
-	FATFS fs;               //FatFs文件系统对象
-	FIL fnew;               //文件对象
-	FRESULT res_sd;         //文件操作结果
-	UINT fnum;              //文件成功读写数量
-	BYTE ReadBuffer[256] = {0};
-	BYTE work[FF_MAX_SS];
-	BYTE WriteBuffer[] = "成功移植了FatFs文件系统！\r\n"; //写缓存区
-	uint32_t Tick0, cost_ms; //用于读写速度测试记时
-	
-
 	//挂载SD卡
 	res_sd = f_mount(&fs, "1:/", 1);
 	
@@ -121,7 +68,16 @@ int fatfs_func(void)
 	{
 		TEST_DEBUG("文件系统挂载成功， 可进行读写测试！\r\n");
 	}
-	
+}
+
+static void FatFs_Deinit(void)
+{
+	//取消挂载文件系统
+	f_mount(NULL, "1:", 1);
+}
+
+static void FatFs_RWstr(void)
+{
 	//***********************写测试****************************
 	//打开文件，如果文件不存在则创建它
 	TEST_DEBUG("即将进行文件写入测试....\r\n");
@@ -180,7 +136,11 @@ int fatfs_func(void)
 	}else{
 		TEST_DEBUG("文件打开失败！错误码=%d\r\n", res_sd);
 	}
+}
 
+static void FatFs_SpeedTest(void)
+{
+	uint32_t Tick0, cost_ms; //用于读写速度测试记时
 	TEST_DEBUG("即将进行写入速度测试....\r\n");
 	//打开文件，若不存在就创建
 	res_sd = f_open(&fnew, "1:/speed_test.txt", FA_CREATE_ALWAYS | FA_WRITE);
@@ -223,10 +183,6 @@ int fatfs_func(void)
 	}else{
 		TEST_DEBUG("文件打开失败！错误码=%d\r\n", res_sd);
 	}
-
-	//取消挂载文件系统
-	f_mount(NULL, "1:", 1);
-
 	return 0;
 }
 
@@ -235,7 +191,11 @@ int main(void)
     SystemClock_Config(CPU_CLK_160M);
     printf("enter main\r\n");
     SPI_Init();
-    fatfs_func();
+    FatFs_Init();
+    FatFs_RWstr();
+    FatFs_SpeedTest();
+    FatFs_Deinit();
+    printf("全部测试已完成\r\n");
     while (1);
 }
 
