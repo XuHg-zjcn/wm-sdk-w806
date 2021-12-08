@@ -146,7 +146,7 @@ int fatfs_func(void)
 	if(res_sd == FR_OK)
 	{
 		TEST_DEBUG("打开文件成功！开始写入数据！\r\n");
-		res_sd= f_write(&fnew, WriteBuffer, sizeof(WriteBuffer), &fnum);
+		res_sd= f_write(&fnew, WriteBuffer, strlen(WriteBuffer), &fnum);
 		
 		if(res_sd == FR_OK)
 		{
@@ -206,7 +206,7 @@ int fatfs_func(void)
 		Tick0 = HAL_GetTick();
 		for(uint32_t i=0;i<1024;i++)
 		{
-			f_write(&fnew, WriteBuffer, sizeof(WriteBuffer), &fnum);
+			f_write(&fnew, WriteBuffer, strlen(WriteBuffer), &fnum);
 			bytes += fnum;
 		}
 		f_close(&fnew);
