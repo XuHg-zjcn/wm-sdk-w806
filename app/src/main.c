@@ -186,10 +186,14 @@ int fatfs_func(void)
 	
 	//***********************读测试****************************
 	//请在电脑上创建read.txt文件，写点内容供测试
-	//打开文件，如果文件不存在则创建它
+	//打开文件，如果文件不存在则打开刚才写入的文件
 	TEST_DEBUG("即将进行文件读取测试....\r\n");
-	//打开文件，若不存在就创建
 	res_sd = f_open(&fnew, "1:/read.txt", FA_OPEN_EXISTING | FA_READ);
+	if(res_sd != FR_OK)
+	{
+		TEST_DEBUG("无法打开read.txt！错误码=%d, 打开刚才写入的文件.\r\n", res_sd);
+		res_sd = f_open(&fnew, "1:/fatfs.txt", FA_OPEN_EXISTING | FA_READ);
+	}
 	//文件打开成功
 	if(res_sd == FR_OK)
 	{
