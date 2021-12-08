@@ -69,14 +69,14 @@ void SdSpiSpeedHigh(void)
 //目前有点小问题，不清楚原因。有时候复位后会卡住，需要将SD卡断电后再上电才能识别。
 int fatfs_func(void)
 {
-	FATFS fs; //FatFs文件系统对象
-	FIL fnew; //文件对象
-	FRESULT res_sd;//文件操作结果
-	UINT fnum; //文件成功读写数量
+	FATFS fs;               //FatFs文件系统对象
+	FIL fnew;               //文件对象
+	FRESULT res_sd;         //文件操作结果
+	UINT fnum;              //文件成功读写数量
 	BYTE ReadBuffer[256] = {0};
 	BYTE work[FF_MAX_SS];
 	BYTE WriteBuffer[] = "成功移植了FatFs文件系统！\r\n"; //写缓存区
-	uint32_t Tick0, cost_ms;
+	uint32_t Tick0, cost_ms; //用于读写速度测试记时
 	
 
 	//挂载SD卡
