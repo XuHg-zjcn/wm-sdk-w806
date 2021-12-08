@@ -101,6 +101,7 @@ int fatfs_func(void)
 	BYTE ReadBuffer[256] = {0};
 	BYTE work[FF_MAX_SS];
 	BYTE WriteBuffer[] = "成功移植了FatFs文件系统！\r\n"; //写缓存区
+	uint32_t Tick0, cost_ms;
 	
 
 	//挂载SD卡
@@ -194,7 +195,50 @@ int fatfs_func(void)
 	}else{
 		TEST_DEBUG("文件打开失败！错误码=%d\r\n", res_sd);
 	}
-	
+
+	TEST_DEBUG("即将进行写入速度测试....\r\n");
+	//打开文件，若不存在就创建
+	res_sd = f_open(&fnew, "1:/speed_test.txt", FA_CREATE_ALWAYS | FA_WRITE);
+	//文件打开成功
+	if(res_sd == FR_OK)
+	{
+		uint32_t bytes = 0;
+		Tick0 = HAL_GetTick();
+		for(uint32_t i=0;i<1024;i++)
+		{
+			f_write(&fnew, WriteBuffer, sizeof(WriteBuffer), &fnum);
+			bytes += fnum;
+		}
+		f_close(&fnew);
+		cost_ms = HAL_GetTick() - Tick0;
+		printf("写入%dkiB, 耗时%dms, 平均%dkiB/s\r\n", \
+		       bytes/1024, cost_ms, (bytes*1000/1024)/cost_ms);
+	}else{
+		TEST_DEBUG("文件打开失败！错误码=%d\r\n", res_sd);
+	}
+
+	TEST_DEBUG("即将进行读速度测试....\r\n");
+	//打开刚写入的测试文件
+	res_sd = f_open(&fnew, "1:/speed_test.txt", FA_OPEN_EXISTING | FA_READ);
+	//文件打开成功
+	if(res_sd == FR_OK)
+	{
+		uint32_t bytes = 0;
+		Tick0 = HAL_GetTick();
+		fnum = 1;
+		while(fnum != 0)
+		{
+			f_read(&fnew, ReadBuffer, sizeof(ReadBuffer), &fnum);
+			bytes += fnum;
+		}
+		f_close(&fnew);
+		cost_ms = HAL_GetTick() - Tick0;
+		printf("读出%dkiB, 耗时%dms, 平均%dkB/s\r\n", \
+		       bytes/1024, cost_ms, bytes/cost_ms);
+	}else{
+		TEST_DEBUG("文件打开失败！错误码=%d\r\n", res_sd);
+	}
+
 	//取消挂载文件系统
 	f_mount(NULL, "1:", 1);
 
