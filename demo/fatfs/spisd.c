@@ -25,6 +25,22 @@ extern void SdSpiSpeedHigh(void);
 
 extern void SdIOInit(void);
 
+
+//替换调这两个函数,提高读写速度
+__attribute__((weak)) void SdSpiReadData(u8* data, u32 len)
+{
+    while(len--){
+        *data++ = SdSpiReadWriteByte(0xff);
+    }
+}
+
+__attribute__((weak)) void SdSpiWriteData(u8* data, u32 len)
+{
+    while(len--){
+        SdSpiReadWriteByte(*data);
+    }
+}
+
 /**
  * @brief 等待卡准备好
  * @retval 0,准备好了;其他,错误代码
@@ -83,11 +99,7 @@ u8 SdGetResponse(u8 Response)
 u8 SdRecvData(u8*buf,u16 len)
 {			  	  
     if(SdGetResponse(0xFE))return 1;  //等待SD卡发回数据起始令牌0xFE
-    while(len--)                      //开始接收数据
-    {
-        *buf=SdSpiReadWriteByte(0xFF);
-        buf++;
-    }
+    SdSpiReadData(buf, len);          //发送数据
     //下面是2个伪CRC（dummy CRC）
     SdSpiReadWriteByte(0xFF);
     SdSpiReadWriteByte(0xFF);									  					    
@@ -107,7 +119,7 @@ u8 SdSendBlock(u8*buf,u8 cmd)
     SdSpiReadWriteByte(cmd);
     if(cmd!=0XFD)                    //不是结束指令
     {
-        for(t=0;t<512;t++)SdSpiReadWriteByte(buf[t]);//提高速度,减少函数传参时间
+        SdSpiWriteData(buf, 512);    //发送512字节数据
         SdSpiReadWriteByte(0xFF);    //忽略crc
         SdSpiReadWriteByte(0xFF);
         t=SdSpiReadWriteByte(0xFF);  //接收响应

@@ -16,6 +16,16 @@ uint8_t SdSpiReadWriteByte(uint8_t write_byte)
     return read_byte;
 }
 
+void SdSpiReadData(uint8_t* data, uint32_t len)
+{
+	HAL_SPI_Receive(&hspi, data, len, 1000);
+}
+
+void SdSpiWriteData(uint8_t* data, uint32_t len)
+{
+	HAL_SPI_Transmit(&hspi, data, len, 1000);
+}
+
 static void SPI_Init(void)
 {
     hspi.Instance = SPI;
