@@ -90,7 +90,6 @@ void SdSpiSpeedHigh(void)
 }
 
 //FAT功能测试：格式化测试，文件写入测试，文件读取测试（基本功能）
-//如需支持长文件名，请打开FF_USE_LFN
 //目前有点小问题，不清楚原因。有时候复位后会卡住，需要将SD卡断电后再上电才能识别。
 int fatfs_func(void)
 {
