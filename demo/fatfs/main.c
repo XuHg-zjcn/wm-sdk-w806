@@ -73,7 +73,13 @@ static int FatFs_Init(void)
 static void FatFs_Deinit(void)
 {
 	//取消挂载文件系统
-	f_mount(NULL, "1:", 1);
+	res_sd = f_mount(NULL, "1:", 1);
+	if(res_sd == FR_OK)
+	{
+		TEST_DEBUG("成功取消挂载SD卡\r\n");
+	}else{
+		TEST_DEBUG("取消挂载SD卡失败\r\n");
+	}
 }
 
 static void FatFs_RWstr(void)
