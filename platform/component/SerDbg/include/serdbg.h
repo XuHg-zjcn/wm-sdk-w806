@@ -1,4 +1,4 @@
-/**
+/*****************************************************************************
  * @file serdbg.h
  * @author Xu Ruijun | 1687701765@qq.com
  * @brief 
@@ -7,11 +7,20 @@
  * @note 请勿把断点设置在本程序内，可能发生错误
  *       如果不把所有断点清除，复位后会CRC校验错误而无法启动，需要重新下载程序
  *       请把flash擦写函数以及所依赖的函数放在单独一个块内，防止擦除自身
- * 
- * @copyright Copyright (c) 2021
- * 
- */
-
+ *****************************************************************************
+ *  serial debug
+ *  Copyright (C) 2022  Xu Ruijun
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *****************************************************************************/
 #ifndef SERDBG_H
 #define SERDBG_H
 
