@@ -50,17 +50,21 @@ class SerDbg_Cmd(Enum): # Param,                       | ret
     Unset_BKPT = 9      # index(1B)                    | stat(1B)
     Clear_BKPT = 10     #                              | stat(1B)
     Contin_BKPT = 11    #                              |
-    About = 12          #                              | str
-    EXIT = 14           #                              | stat(1B)
+    Pause = 12          #                              |
+    Resume = 13         #                              |
+    About = 14          #                              | str
+    EXIT = 15           #                              | stat(1B)
 
 class SerDbg:
     def __init__(self, ser):
         self.ser = ser
         #self.stat = False
+        self.pause = False
     
     def __send_cmd(self, name, *args):
         #if not self.stat:
-        self.ser.write(b'AT+SDB\r\n')
+        if not self.pause:
+            self.ser.write(b'AT+SDB\r\n')
         sf = '<B'
         sd = [SerDbg_Cmd[name].value]
         for c, data in args:
@@ -105,6 +109,13 @@ class SerDbg:
         self.__send_cmd('Read_Mem', ('I', addr), ('H', len(data)))
         self.__send_dat(data)
 
+    def Pause(self):
+        self.__send_cmd('Pause')
+        self.pause = True
+
+    def Resume(self):
+        self.__send_cmd('Resume')
+        self.pause = False
 
 
 class GDBServer:
@@ -184,10 +195,14 @@ class GDBServer:
                 self.__send('m0')
             if recv == 'qsThreadInfo':
                 self.__send('l')
-            if recv == 'Hc-1':
-                self.__send('OK')
-            if recv == 'qAttached':
+            if recv.find('qAttached') == 0:
                 self.__send('1')
+            if recv[:2] == 'Hc':
+                self.Pause()
+                self.__send('OK')
+            if recv == 'c':
+                self.Resume()
+                self.__send('OK')
             if recv == 'qC':
                 self.__send('QC00')
             if recv == 'qOffsets':
@@ -212,7 +227,9 @@ class GDBServer:
                 self.__send('vCont;c')
             if recv == 'vCont;c':
                 self.__send('OK')
-            if recv == 'D':
+            if recv[0] == 'D':
+                self.Resume()
+                self.__send('OK')
                 break
 
     def read_areg(self, rx):

@@ -24,28 +24,37 @@
 
 void serdbg_parser_cmd()
 {
-    SerDbg_Cmd cmd = 0;
-    SERDBG_RECV(&cmd, 1);
-    switch(cmd){
-        case SDB_Read_Reg:
-            SDB_Read_Reg_op();
-            break;
-        case SDB_Write_Reg:
-            SDB_Write_Reg_op();
-            break;
-        case SDB_Read_Mem:
-            SDB_Read_Mem_op();
-            break;
-        case SDB_Write_Mem:
-            SDB_Write_Mem_op();
-            break;
-        case SDB_Set_BKPT:
-            SDB_Set_BKPT_op();
-            break;
-        case SDB_Unset_BKPT:
-            SDB_Unset_BKPT_op();
-            break;
-        default:
-            break;
-    }
+    _Bool pause = 0;
+    SerDbg_Cmd cmd;
+    do{
+        SERDBG_RECV(&cmd, 1);
+        switch(cmd){
+            case SDB_Read_Reg:
+                SDB_Read_Reg_op();
+                break;
+            case SDB_Write_Reg:
+                SDB_Write_Reg_op();
+                break;
+            case SDB_Read_Mem:
+                SDB_Read_Mem_op();
+                break;
+            case SDB_Write_Mem:
+                SDB_Write_Mem_op();
+                break;
+            case SDB_Set_BKPT:
+                SDB_Set_BKPT_op();
+                break;
+            case SDB_Unset_BKPT:
+                SDB_Unset_BKPT_op();
+                break;
+            case SDB_Pause:
+                pause = 1;
+	        break;
+            case SDB_Resume:
+	        pause = 0;
+	        break;
+            default:
+	        return;
+	}
+    }while(pause);
 }
