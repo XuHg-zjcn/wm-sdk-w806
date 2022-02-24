@@ -3,6 +3,7 @@ import sys
 import serial
 import socket
 import struct
+import signal
 from enum import Enum
 
 # 0x00-0x1f |  0-31 |  r0-31
@@ -244,14 +245,24 @@ class SDBServer(SerDbg, GDBServer):
         SerDbg.__init__(self, ser)
         GDBServer.__init__(self, soc)
 
+def pexit(signum, frame):
+    print('exit')
+    exit()
 
-if __name__ == '__main__':
-    ser = serial.Serial('/dev/'+sys.argv[1], 115200)
-    soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+def main():
     soc.bind(('127.0.0.1', 3334))
     soc.listen(1)
-    
     conn, addr = soc.accept()
     print(addr)
     rsp = SDBServer(ser, conn)
     rsp.run()
+
+'''
+如果遇到端口被占用，请尝试先退出gdb后再启动本程序
+'''
+if __name__ == '__main__':
+    ser = serial.Serial('/dev/'+sys.argv[1], 115200)
+    soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    signal.signal(signal.SIGINT, pexit)
+    signal.signal(signal.SIGTERM, pexit)
+    main()
