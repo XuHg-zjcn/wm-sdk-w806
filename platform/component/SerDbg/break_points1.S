@@ -38,25 +38,15 @@ bkpt_stack_top:
     .type   RunInstRAM, %function
 RunInstRAM:     //在内存中运行断点处的指令
     //填充内容
-    .short 0           //被覆盖的16位内容
-    lsli16  r0, r0, 0  //16位空指令，用于扩展到32位
+    asri16  r0, r0, 0  //被覆盖的16位内容
+    asri16  r0, r0, 0  //16位空指令，用于扩展到32位
 
-    //保存r15
-    subi    sp, 4
-    stw     r15, (sp)
-
-    //跳到下一个PC地址，请在调用本函数前+2或+4
-    lrw     r15, bkpt_stack_top
-    ldw     r15, (r15, 196)
-    mtcr    r15, epc
-
-    //当前PSR
+    //psr, 不屏蔽无法再次进入中断
+    /*push    r15
     mfcr    r15, psr
     mtcr    r15, epsr
+    pop     r15*/
 
-    //恢复r15和sp
-    ldw     r15, (sp)
-    addi    sp, 4
     rte
     .size   RunInstRAM, . - RunInstRAM
 
@@ -66,21 +56,20 @@ RunInstRAM:     //在内存中运行断点处的指令
     .global Breakpoint_Handler
     .type   Breakpoint_Handler, %function
 Breakpoint_Handler:
-    //把r15 PUSH到栈
+    //把r15 PUSH到栈，使用push,pop指令操作r15无法二次进入中断
     subi    sp, 4
     stw     r15, (sp)
-    addi    sp, 4      //恢复原来栈指针，供下面保存
 
     //保存r0-r13
     lrw     r15, bkpt_stack_top
-    stm     r0-r14, (r15)
+    stm     r0-r13, (r15)
 
-    //保存普通用户r14(sp)
-    //mfcr    r13, usp
-    //stw     r13, (r15, 56)
+    //保存r14
+    mov     r0, sp
+    addi    r0, 4
+    stw     r0, (r15, 56)
 
     //保存刚才栈里的r15
-    subi   sp, 4
     ldw    r13, (sp)
     stw    r13, (r15, 60)
 
@@ -97,9 +86,7 @@ Breakpoint_Handler:
     mfcr   r0, epc
     stw    r0, (r15, 196)
 
-    mov    sp,  r15    //切换到新栈
     mov    r0,  r15    //C函数的参数
-
     lrw    r15,  Breakpoint_Handler_C
     jsr    r15         //跳转到C函数
 Load_Regs_Run:
@@ -108,32 +95,33 @@ Load_Regs_Run:
     sth     r0, (r2)
 
     lrw     r15, bkpt_stack_top
-
     cmphsi  r0, 0xc000      //判断是否为32为指令
-    incf    r2, r2, 2       //不是32位指令，r2+=2
+    movi    r1, 0x5000      //先写空指令
+    mfcr    r3, epc         //r3=epc
+    addi    r3, 2           //r3+=2
     bf      ll16b           //不是32位指令，跳到后面
 
     //是32位指令
-    ldw     r1, (r15, 196)  //epc
-    ldh     r1, (r1, 2)     //加载Flash中的后半字
-    sth     r1, (r2, 2)     //保存后半字到RAM程序
+    ldh     r1, (r3, 2)     //加载Flash中的后半字
+    addi    r3, 2
 ll16b:
-    addi    r2, 2           //r2+=2
-    mtcr    r2, epc
-    stw     r2, (r15, 196)  //写入新epc
+    sth     r1, (r2, 2)     //保存后半字到RAM程序
+    mtcr    r3, epc
 
     ldm     r0-r13, (r15)   //暂时不恢复r14和r15
     addi    r15, 64
     ldm     r16-r31, (r15)
     addi    r15, 64
     fldms   vr0-vr15, (r15)
-    addi    r15, 64
+    subi    r15, 128
 
-    ldw     r14, (r15)
-    mtcr    r14, epsr
+    //恢复psr，不屏蔽无法再次进入中断
+    /*ldw     r15, (r15, 192)
+    mtcr    r15, psr*/
 
-    subi    r15,  192
-    ldw     r14, (r15, 56)  //恢复r14
-    ldw     r15, (r15, 60)  //恢复r15
-    rte
+    //恢复r15
+    ldw     r15, (sp)
+    addi    sp, 4
+
+    jmpi    RunInstRAM  //跳转到内存中执行
     .size   Breakpoint_Handler, . - Breakpoint_Handler
