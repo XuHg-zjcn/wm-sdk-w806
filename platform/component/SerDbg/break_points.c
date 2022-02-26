@@ -46,7 +46,7 @@ uint16_t write_0x0000(uint16_t *p)
 
 
     FLASH->CMD_INFO = 0x4;
-	FLASH->CMD_START = FLASH_CMD_START_CMD;
+    FLASH->CMD_START = FLASH_CMD_START_CMD;
     return *p;
 }
 
@@ -112,6 +112,7 @@ uint16_t Breakpoint_Handler_C(BKPT_Regs* regs)
 {
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
     int index = find_bkpt_num(regs->epc);
+    printf("BKPT:%d\n", index);
     for (uint8_t i = 0; i < 32; i++) {
         printf("r%d: %08x\t", i, regs->rx[i]);
         if ((i % 5) == 4) {
@@ -134,7 +135,6 @@ uint16_t Breakpoint_Handler_C(BKPT_Regs* regs)
         Error_Handler();
         return 0x0000U;
     }else{
-        printf("old:  %04x\n", bkpts[index].old);
         return bkpts[index].old;
     }
 }
