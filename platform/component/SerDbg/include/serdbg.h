@@ -48,16 +48,12 @@ typedef enum{           // Param,                       | ret
     SDB_Write_Mem  = 3, // addr(4B), len(2B), data(lenB)| stat(1B)
     SDB_Read_Flash = 4, //
     SDB_Write_Flash= 5, //
-    SDB_Set_BKPT   = 6, // addr(4B)                     | index(1B)
-    SDB_Upd_BKPT   = 7, // index(1B), set(1B)           | stat(1B)
-    SDB_Get_BKPTS  = 8, //                              | n(1B), set(nB)
-    SDB_Unset_BKPT = 9, // index(1B)                    | stat(1B)
-    SDB_Clear_BKPT = 10,//                              | stat(1B)
-    SDB_Contin_BKPT= 11,//                              |
-    SDB_Pause      = 12,//                              |
-    SDB_Resume     = 13,//                              |
-    SDB_About      = 14,//                              | str
-    SDB_EXIT       = 15,//                              | stat(1B)
+    SDB_New_BKPT   = 6, // addr(4B)                     | index(1B)
+    SDB_Mode_BKPT  = 7, // index(1B), set(1B)           | stat(1B)
+    SDB_Get_BKPT   = 8, // index(1B)                    | [n(1B)], set(nB)
+    SDB_Pause      = 9, //                              |
+    SDB_Resume     = 10,//                              |
+    SDB_About      = 11,//                              | str
 }SerDbg_Cmd;
 
 void serdbg_parser_cmd();

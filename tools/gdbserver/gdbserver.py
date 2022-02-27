@@ -45,16 +45,20 @@ class SerDbg_Cmd(Enum): # Param,                       | ret
     Write_Mem = 3       # addr(4B), len(2B), data(lenB)| stat(1B)
     Read_Flash = 4      #
     Write_Flash = 5     #
-    Set_BKPT = 6        # addr(4B)                     | index(1B)
-    Upd_BKPT = 7        # index(1B), set(1B)           | stat(1B)
-    Get_BKPTS = 8       #                              | n(1B), set(nB)
-    Unset_BKPT = 9      # index(1B)                    | stat(1B)
-    Clear_BKPT = 10     #                              | stat(1B)
-    Contin_BKPT = 11    #                              |
-    Pause = 12          #                              |
-    Resume = 13         #                              |
-    About = 14          #                              | str
-    EXIT = 15           #                              | stat(1B)
+    New_BKPT = 6        # addr(4B), mode(1B)           | index(1B), old(2B), new(2B)
+    Mode_BKPT = 7       # index(1B), set(1B)           | stat(1B)
+    Get_BKPT = 8        # index(1B)                    | [n(1B)], set(nB)
+    Pause = 9           #                              |
+    Resume = 10         #                              |
+    About = 11          #                              | str
+
+class BKPT_Mode(Enum):
+    Disable = 0
+    Erase = 1
+    BinCmd = 2
+    StrNum = 3
+    StrRegBase = 4
+    StrRegAll = 5
 
 class SerDbg:
     def __init__(self, ser):
@@ -66,6 +70,10 @@ class SerDbg:
         #if not self.stat:
         if not self.pause:
             self.ser.write(b'AT+SDB\r\n')
+        if name == 'Pause':
+            self.pause = True
+        if name == 'Resume':
+            self.pause = False
         sf = '<B'
         sd = [SerDbg_Cmd[name].value]
         for c, data in args:
@@ -109,6 +117,9 @@ class SerDbg:
     def Write_Mem(self, addr, data):
         self.__send_cmd('Read_Mem', ('I', addr), ('H', len(data)))
         self.__send_dat(data)
+
+    def New_BKPT(self, addr):
+        self.__send_cmd('New_BKPT', ('I', addr), ('B', BKPT_Mode.BinCmd.value))
 
     def Pause(self):
         self.__send_cmd('Pause')
@@ -175,60 +186,65 @@ class GDBServer:
             print('>', recv)
             if recv.find('qSupported') >= 0:
                 self.__send('PacketSize=1000;multiprocess+;swbreak+;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;QThreadEvents+;no-resumed+')
-            if recv.find('qXfer:features:read:target.xml:') >= 0:
+            elif recv.find('qXfer:features:read:target.xml:') >= 0:
                 x = recv.find('xml:')
                 self.send_file(recv[x+4:], 'target.xml')
-            if recv == 'vMustReplyEmpty':
+            elif recv == 'vMustReplyEmpty':
                 self.__send('')
-            if recv.find('Hg') >= 0:
+            elif recv.find('Hg') >= 0:
                 self.__send('OK')
-            if recv.find('qL1200') >= 0:
+            elif recv.find('qL1200') >= 0:
                 self.__send('')
-            if recv == 'qTStatus':
+            elif recv == 'qTStatus':
                 self.__send('T1')
-            if recv == 'qTfV':
+            elif recv == 'qTfV':
                 self.__send('l')
-            if recv == 'udebugprintport':
+            elif recv == 'udebugprintport':
                 self.__send('1234')
-            if recv == '?':
+            elif recv == '?':
                 self.__send('S05')
-            if recv == 'qfThreadInfo':
+            elif recv == 'qfThreadInfo':
                 self.__send('m0')
-            if recv == 'qsThreadInfo':
+            elif recv == 'qsThreadInfo':
                 self.__send('l')
-            if recv.find('qAttached') == 0:
+            elif recv.find('qAttached') == 0:
                 self.__send('1')
-            if recv[:2] == 'Hc':
+            elif recv[:2] == 'Hc':
                 self.Pause()
                 self.__send('OK')
-            if recv == 'c':
+            elif recv == 'c':
                 self.Resume()
                 self.__send('OK')
-            if recv == 'qC':
+            elif recv == 'qC':
                 self.__send('QC00')
-            if recv == 'qOffsets':
+            elif recv == 'qOffsets':
                 self.__send('')
-            if recv == 'g':
+            elif recv == 'g':
                 self.__send(self.Read_Regs())
-            if recv[0] == 'p':
+            elif recv[0] == 'p':
                 rx = int(recv[1:], base=16)
                 data = self.Read_aReg(rx)
                 self.__send(data)
-            if recv[0] == 'm':
+            elif recv[0] == 'm':
                 addr, size = recv[1:].split(',')
                 addr = int(addr, base=16)
                 size = int(size, base=16)
                 data = self.Read_Mem(addr, size)
                 self.__send(data)
-            if recv == 'qTfP':
+            elif recv[0] == 'Z':
+                Type, addr, size = recv[1:].split(',')
+                addr = int(addr, base=16)
+                self.New_BKPT(addr)
+                self.__send('OK')
+            elif recv == 'qTfP':
                 self.__send('l')
-            if recv == 'qSymbol::':
+            elif recv == 'qSymbol::':
                 self.__send('OK')
-            if recv == 'vCont?':
+            elif recv == 'vCont?':
                 self.__send('vCont;c')
-            if recv == 'vCont;c':
+            elif recv == 'vCont;c':
                 self.__send('OK')
-            if recv[0] == 'D':
+            elif recv[0] == 'D':
                 self.Resume()
                 self.__send('OK')
                 break

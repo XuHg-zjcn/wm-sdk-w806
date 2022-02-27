@@ -41,11 +41,11 @@ void serdbg_parser_cmd()
             case SDB_Write_Mem:
                 SDB_Write_Mem_op();
                 break;
-            case SDB_Set_BKPT:
-                SDB_Set_BKPT_op();
+            case SDB_New_BKPT:
+                SDB_New_BKPT_op();
                 break;
-            case SDB_Unset_BKPT:
-                SDB_Unset_BKPT_op();
+            case SDB_Mode_BKPT:
+                SDB_Mode_BKPT_op();
                 break;
             case SDB_Pause:
                 pause = 1;

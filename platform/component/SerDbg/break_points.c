@@ -15,6 +15,8 @@
 #include "break_points.h"
 #include "wm_hal.h"
 
+extern void Error_Handler(void);
+
 //uint8_t dbg_on = 0;
 uint8_t n_bkpt = 0;
 BreakPoint bkpts[SERDBG_MAX_BKPT];
@@ -29,11 +31,7 @@ typedef struct{
 uint16_t write_0x0000(uint16_t *p)
 {
     uint32_t offaddr = (unsigned)p & (INSIDE_FLS_BASE_ADDR - 1);
-    uint32_t secpos = offaddr / FLASH_CMD_START_CMD;
-    uint32_t pageaddr = secpos * INSIDE_FLS_SECTOR_SIZE;
-    uint32_t u16offset = offaddr % INSIDE_FLS_SECTOR_SIZE;
     uint32_t buff_addr = RSA_BASE;
-    uint32_t i = 0;
 
     FLASH->CMD_INFO = 0x6;
 	FLASH->CMD_START = FLASH_CMD_START_CMD;
@@ -50,26 +48,24 @@ uint16_t write_0x0000(uint16_t *p)
     return *p;
 }
 
-int set_BreakPoint(void *p)
+int New_BreakPoint(void *p, BKPT_Mode mode)
 {
     if((uint32_t)p & 0x01){
         return -SDB_INVAILD_PTR;
     }if(n_bkpt == SERDBG_MAX_BKPT){
         return -SDB_BKPT_FULL;
     }
-    const uint16_t zero = 0;
-    printf("%08x\r\n", (uint32_t)p);
+    //printf("%08x\r\n", (uint32_t)p);
     //wm_flash_unlock();
     //wm_flash_lock();
     bkpts[n_bkpt].p = p;
     bkpts[n_bkpt].old = *(uint16_t*)p;
-    bkpts[n_bkpt].isSTOP = 0;
-    printf("%04x\r\n", write_0x0000((uint16_t*)p));
-    printf("%08x\r\n", (uint32_t)p);
+    bkpts[n_bkpt].mode = mode;
+    write_0x0000((uint16_t*)p);
     return n_bkpt++;
 }
 
-SerDbg_Stat unset_BreakPoint(int x)
+SerDbg_Stat Erase_BreakPoint(int x)
 {
     if(x >= n_bkpt){
         return SDB_INVAILD_BKPT;
@@ -84,11 +80,11 @@ SerDbg_Stat unset_BreakPoint(int x)
     return SDB_OK;
 }
 
-SerDbg_Stat clear_All_BreakPoints()
+SerDbg_Stat Erase_BreakPoint_All()
 {
     SerDbg_Stat stat;
     while(n_bkpt){
-        stat = unset_BreakPoint(n_bkpt-1);
+        stat = Erase_BreakPoint(n_bkpt-1);
         if(stat != SDB_OK){
             return stat;
         }
@@ -110,47 +106,93 @@ int find_bkpt_num(void *p)
 
 uint16_t Breakpoint_Handler_C(BKPT_Regs* regs)
 {
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
+    //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
     int index = find_bkpt_num(regs->epc);
-    printf("BKPT:%d\n", index);
-    for (uint8_t i = 0; i < 32; i++) {
-        printf("r%d: %08x\t", i, regs->rx[i]);
-        if ((i % 5) == 4) {
-            printf("\n");
-        }
-    }
-    printf("\n");
-    for (uint8_t i = 0; i < 16; i++) {
-        printf("vr%d: %08x\t", i, regs->vrx[i]);
-        if ((i % 5) == 4) {
-            printf("\n");
-        }
-    }
-    printf("\n");
-    printf("epsr: %08x\n", regs->epsr);
-    printf("epc : %08x\n", regs->epc);
-    printf("bkpt index=%d\r\n", index);
-    //printf("clear breakpoints=%d\r\n", clear_All_BreakPoints());
     if(index < 0){
         Error_Handler();
         return 0x0000U;
-    }else{
-        return bkpts[index].old;
     }
+    BKPT_Mode mode = bkpts[index].mode;
+    if(mode == BKPT_BinCmd){
+        printf("\n+SDB:B%d\n", index);
+        serdbg_parser_cmd();
+    }
+    if(mode >= BKPT_StrNum){
+        printf("BKPT:%d\n", index);
+    }
+    if(mode >= BKPT_StrRegBase){
+        for(int i=0;i<15;i++){
+            if(i<10)
+                printf(" ");
+            printf("r%d:%08x, ", i, regs->rx[i]);
+            if((i%4) == 3){
+                printf("\n");
+            }
+        }
+        printf("r15:%08x\n", regs->rx[15]);
+    }
+    if(mode >= BKPT_StrRegAll){
+        for(int i=16;i<31;i++){
+            if(i<10)
+                printf(" ");
+            printf("r%d:%08x, ", i, regs->rx[i]);
+            if((i%4) == 3){
+                printf("\n");
+            }
+        }
+        printf("r31:%08x\n", regs->rx[15]);
+        for(int i=0;i<15;i++){
+            if(i<10)
+                printf(" ");
+            printf("vr%d:%08x, ", i, regs->vrx[i]);
+            if((i%4) == 3){
+                printf("\n");
+            }
+        }
+        printf("vr15:%08x\n", regs->vrx[15]);
+    }
+    if(mode >= BKPT_StrRegBase){
+        printf("epsr: %08x\n", regs->epsr);
+        printf("epc : %08x\n", regs->epc);
+    }
+    return bkpts[index].old;
 }
 
-void SDB_Set_BKPT_op()
+void SDB_New_BKPT_op()
 {
     void *p;
+    uint8_t tmp;
     SERDBG_RECV(&p, sizeof(p));
-    set_BreakPoint(p);
+    SERDBG_RECV(&tmp, 1);
+    tmp = New_BreakPoint(p, tmp);
+    SERDBG_SEND(&tmp, 1);
+    SERDBG_SEND(&bkpts[tmp].old, 2);
+    SERDBG_SEND(p, 2);
 }
 
-void SDB_Unset_BKPT_op()
+void SDB_Mode_BKPT_op()
 {
     uint8_t i;
+    uint8_t tmp;
     SERDBG_RECV(&i, sizeof(i));
-    if(i < SERDBG_MAX_BKPT){
-        unset_BreakPoint(i);
+    SERDBG_RECV(&tmp, sizeof(tmp));
+    if(i == 0xff){
+        if(tmp == BKPT_Erase){
+            Erase_BreakPoint_All();
+        }else{
+            for(i=0;i<n_bkpt;i++){
+                bkpts[i].mode = tmp;
+            }
+        }
+        tmp = 0x03;
+    }else if(i >= n_bkpt){
+        tmp = 0x02;
+    }else if(tmp == BKPT_Erase){
+        Erase_BreakPoint(i);
+        tmp = 0x01;
+    }else{
+        bkpts[i].mode = tmp;
+        tmp = 0x00;
     }
+    SERDBG_SEND(&tmp, sizeof(tmp));
 }

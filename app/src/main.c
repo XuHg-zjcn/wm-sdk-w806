@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include "wm_hal.h"
 #include "serdbg.h"
+#include "break_points.h"
 
 
 static void GPIO_Init();
@@ -39,30 +40,15 @@ void gpio_x()
     HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1);
 }
 
-void gpio_x2()
-{
-    printf("gpio_x2\r\n");
-    while (1)
-    {
-        HAL_Delay(300);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
-        HAL_Delay(300);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
-        HAL_Delay(300);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
-        HAL_Delay(300);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
-    }
-}
-
 int main(void)
 {
     SystemClock_Config(CPU_CLK_160M);
     GPIO_Init();
-    //set_BreakPoint(&gpio_x2);
+    New_BreakPoint(&gpio_x, BKPT_StrRegBase);
     printf("enter main\r\n");
-    gpio_x();
-    gpio_x2();
+    while(1){
+        gpio_x();
+    }
 }
 
 static void GPIO_Init()

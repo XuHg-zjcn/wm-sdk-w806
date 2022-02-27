@@ -21,19 +21,28 @@
 
 #define SERDBG_MAX_BKPT 8
 
+typedef enum{
+  BKPT_Disable = 0,
+  BKPT_Erase,
+  BKPT_BinCmd,
+  BKPT_StrNum,
+  BKPT_StrRegBase,
+  BKPT_StrRegAll,
+}BKPT_Mode;
+
 typedef struct{
     void *p;        //指针
     uint16_t old;   //原有代码字节
-    uint8_t isSTOP; //是否停止
+    BKPT_Mode mode; //断点的模式
 }BreakPoint;
 
 SerDbg_Stat debug_on();
-int set_BreakPoint(void *p);
+int New_BreakPoint(void *p, BKPT_Mode mode);
 SerDbg_Stat unset_BreakPoint(int x);
 SerDbg_Stat clear_All_BreakPoints();
 SerDbg_Stat debug_off();
 
-void SDB_Set_BKPT_op();
-void SDB_Unset_BKPT_op();
+void SDB_New_BKPT_op();
+void SDB_Mode_BKPT_op();
 
 #endif
