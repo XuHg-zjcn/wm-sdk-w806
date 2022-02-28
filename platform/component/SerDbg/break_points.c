@@ -30,8 +30,7 @@ uint16_t write_0x0000(uint16_t *p)
     uint32_t buff_addr = RSA_BASE;
 
     FLASH->CMD_INFO = 0x6;
-	FLASH->CMD_START = FLASH_CMD_START_CMD;
-
+    FLASH->CMD_START = FLASH_CMD_START_CMD;
     M32(buff_addr) = 0x00000000;
 
     FLASH->CMD_INFO = 0x80009002 | ((2 - 1) << 16);
