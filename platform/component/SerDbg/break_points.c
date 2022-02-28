@@ -13,20 +13,16 @@
  * GNU General Public License for more details.
  **********************************************************************/
 #include "break_points.h"
+#include "reg_ram.h"
 #include "wm_hal.h"
 
+extern SDB_RegSave serdbg_regsave;
 extern void Error_Handler(void);
 
 //uint8_t dbg_on = 0;
 uint8_t n_bkpt = 0;
 BreakPoint bkpts[SERDBG_MAX_BKPT];
 
-typedef struct{
-    uint32_t rx[32];
-    uint32_t vrx[16];
-    uint32_t epsr;
-    void *epc;
-}BKPT_Regs;
 
 uint16_t write_0x0000(uint16_t *p)
 {
@@ -104,7 +100,7 @@ int find_bkpt_num(void *p)
     return -1;
 }
 
-uint16_t Breakpoint_Handler_C(BKPT_Regs* regs)
+uint16_t Breakpoint_Handler_C(SDB_RegSave* regs)
 {
     //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
     int index = find_bkpt_num(regs->epc);

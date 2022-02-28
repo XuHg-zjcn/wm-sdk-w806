@@ -17,11 +17,19 @@
 
 #include "serdbg.h"
 
-//待实现
+typedef struct{
+    uint32_t rx[32];
+    uint32_t vrx[16];
+    uint32_t epsr;
+    void *epc;
+}SDB_RegSave;
+
 SerDbg_Stat SDB_Read_Reg_op();
 SerDbg_Stat SDB_Write_Reg_op();
 SerDbg_Stat SDB_Read_Mem_op();
 SerDbg_Stat SDB_Write_Mem_op();
+
+//待实现
 SerDbg_Stat SDB_Read_Flash_op();
 SerDbg_Stat SDB_Write_Flash_op();
 

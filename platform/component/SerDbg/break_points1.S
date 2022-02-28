@@ -24,14 +24,6 @@
 
 .import Breakpoint_Handler_C
 
-.section .bss
-    .global bkpt_stack_base
-    .global bkpt_stack_top
-bkpt_stack_base:
-    .space 4096  //stack
-bkpt_stack_top:
-    .space 200   //保存寄存器
-
 .data
     .align  2
     .global RunInstRAM
@@ -61,7 +53,7 @@ Breakpoint_Handler:
     stw     r15, (sp)
 
     //保存r0-r13
-    lrw     r15, bkpt_stack_top
+    lrw     r15, serdbg_regsave
     stm     r0-r13, (r15)
 
     //保存r14
@@ -94,7 +86,7 @@ Load_Regs_Run:
     lrw     r2, RunInstRAM
     sth     r0, (r2)
 
-    lrw     r15, bkpt_stack_top
+    lrw     r15, serdbg_regsave
     cmphsi  r0, 0xc000      //判断是否为32为指令
     movi    r1, 0x5000      //先写空指令
     mfcr    r3, epc         //r3=epc

@@ -15,7 +15,7 @@
 #include "reg_ram.h"
 #include "serdbg.h"
 
-extern uint32_t* uart0_irq_sp;
+SDB_RegSave serdbg_regsave;
 
 #pragma pack(1)
 typedef struct{
@@ -36,8 +36,9 @@ SerDbg_Stat SDB_Read_Reg_op()
 {
     RegOp op;
     SERDBG_RECV(&op, sizeof(op));
-    if(uart0_irq_sp && (op.rx < op.ry) && (op.ry <= 50)){
-        SERDBG_SEND(uart0_irq_sp+op.rx, (op.ry-op.rx)*4);
+	SERDBG_SYNC();
+    if((op.rx < op.ry) && (op.ry <= 50)){
+        SERDBG_SEND((uint32_t *)&serdbg_regsave+op.rx, (op.ry-op.rx)*4);
     }
 }
 
@@ -46,8 +47,8 @@ SerDbg_Stat SDB_Write_Reg_op()
 {
     RegOp op;
     SERDBG_RECV(&op, sizeof(op));
-    if(uart0_irq_sp && (op.rx < op.ry) && (op.ry <= 50)){
-        SERDBG_RECV(uart0_irq_sp+op.rx, (op.ry-op.rx)*4);
+    if((op.rx < op.ry) && (op.ry <= 50)){
+        SERDBG_RECV((uint32_t *)&serdbg_regsave+op.rx, (op.ry-op.rx)*4);
     }
 }
 
