@@ -161,6 +161,7 @@ void SDB_New_BKPT_op()
     SERDBG_RECV(&p, sizeof(p));
     SERDBG_RECV(&tmp, 1);
     tmp = New_BreakPoint(p, tmp);
+    SERDBG_SYNC();
     SERDBG_SEND(&tmp, 1);
     SERDBG_SEND(&bkpts[tmp].old, 2);
     SERDBG_SEND(p, 2);
@@ -190,5 +191,6 @@ void SDB_Mode_BKPT_op()
         bkpts[i].mode = tmp;
         tmp = 0x00;
     }
+    SERDBG_SYNC();
     SERDBG_SEND(&tmp, sizeof(tmp));
 }

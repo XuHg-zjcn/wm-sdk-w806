@@ -4,6 +4,8 @@ import serial
 import socket
 import struct
 import signal
+import threading
+import queue
 from enum import Enum
 
 # 0x00-0x1f |  0-31 |  r0-31
@@ -38,6 +40,7 @@ def reg_gdb2num(rx):
         rx = -1 #ValueError(f'unsupported register r{rx}')
     return rx
 
+
 class SerDbg_Cmd(Enum): # Param,                       | ret           
     Read_Reg = 0        # rx-ry(2B)                    | data(4nB)
     Write_Reg = 1       # rx-ry(2B), data(4nB)         | stat(1B)
@@ -52,6 +55,7 @@ class SerDbg_Cmd(Enum): # Param,                       | ret
     Resume = 10         #                              |
     About = 11          #                              | str
 
+
 class BKPT_Mode(Enum):
     Disable = 0
     Erase = 1
@@ -60,12 +64,41 @@ class BKPT_Mode(Enum):
     StrRegBase = 4
     StrRegAll = 5
 
-class SerDbg:
-    def __init__(self, ser):
+
+class SerMon(threading.Thread):
+    def __init__(self, ser, queue):
         self.ser = ser
-        #self.stat = False
+        self.queue = queue
+        super().__init__()
+
+    def run(self):
+        sync = b'\n+SDB:'
+        i = 0
+        while True:
+           r = self.ser.read(1)
+           if ord(r) == sync[i]:
+               i += 1
+               if i == len(sync):
+                   i = 0
+                   line = self.ser.readline()
+                   self.queue.put(line)
+                   self.queue.join()
+           else:
+               try:
+                   s = (sync[:i]+r).decode()
+               except Exception:
+                   continue
+               sys.stdout.write(s)
+               sys.stdout.flush()
+               i = 0
+
+
+class SerDbg:
+    def __init__(self, ser, queue):
+        self.ser = ser
+        self.queue = queue
         self.pause = False
-    
+
     def __send_cmd(self, name, *args):
         #if not self.stat:
         if not self.pause:
@@ -85,8 +118,10 @@ class SerDbg:
         self.ser.write(data)
 
     def __recv(self, size):
+        self.queue.get()
         data = self.ser.read(size)
         print('r', data.hex())
+        self.queue.task_done()
         return data
 
     def Read_Regs(self):
@@ -130,10 +165,12 @@ class SerDbg:
         self.pause = False
 
 
-class GDBServer:
-    def __init__(self, conn):
+class GDBServer(threading.Thread):
+    def __init__(self, conn, ll):
         self.conn = conn
+        self.ll = ll
         self.tmp = []
+        super().__init__()
 
     def recv(self):
         while not self.tmp:
@@ -210,31 +247,31 @@ class GDBServer:
             elif recv.find('qAttached') == 0:
                 self.__send('1')
             elif recv[:2] == 'Hc':
-                self.Pause()
+                self.ll.Pause()
                 self.__send('OK')
             elif recv == 'c':
-                self.Resume()
+                self.ll.Resume()
                 self.__send('OK')
             elif recv == 'qC':
                 self.__send('QC00')
             elif recv == 'qOffsets':
                 self.__send('')
             elif recv == 'g':
-                self.__send(self.Read_Regs())
+                self.__send(self.ll.Read_Regs())
             elif recv[0] == 'p':
                 rx = int(recv[1:], base=16)
-                data = self.Read_aReg(rx)
+                data = self.ll.Read_aReg(rx)
                 self.__send(data)
             elif recv[0] == 'm':
                 addr, size = recv[1:].split(',')
                 addr = int(addr, base=16)
                 size = int(size, base=16)
-                data = self.Read_Mem(addr, size)
+                data = self.ll.Read_Mem(addr, size)
                 self.__send(data)
             elif recv[0] == 'Z':
                 Type, addr, size = recv[1:].split(',')
                 addr = int(addr, base=16)
-                self.New_BKPT(addr)
+                self.ll.New_BKPT(addr)
                 self.__send('OK')
             elif recv == 'qTfP':
                 self.__send('l')
@@ -245,40 +282,29 @@ class GDBServer:
             elif recv == 'vCont;c':
                 self.__send('OK')
             elif recv[0] == 'D':
-                self.Resume()
+                self.ll.Resume()
                 self.__send('OK')
                 break
 
-    def read_areg(self, rx):
-        pass
-
-    def read_mem(self, addr, size):
-        pass
-
-
-class SDBServer(SerDbg, GDBServer):
-    def __init__(self, ser, soc):
-        SerDbg.__init__(self, ser)
-        GDBServer.__init__(self, soc)
 
 def pexit(signum, frame):
     print('exit')
     exit()
 
-def main():
-    soc.bind(('127.0.0.1', 3334))
-    soc.listen(1)
-    conn, addr = soc.accept()
-    print(addr)
-    rsp = SDBServer(ser, conn)
-    rsp.run()
-
 '''
 如果遇到端口被占用，请尝试先退出gdb后再启动本程序
 '''
 if __name__ == '__main__':
-    ser = serial.Serial('/dev/'+sys.argv[1], 115200)
-    soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     signal.signal(signal.SIGINT, pexit)
     signal.signal(signal.SIGTERM, pexit)
-    main()
+    ser = serial.Serial('/dev/'+sys.argv[1], 115200)
+    soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    queue = queue.Queue(1)
+    mon = SerMon(ser, queue)
+    mon.start()
+    sdb = SerDbg(ser, queue)
+    soc.bind(('127.0.0.1', 3334))
+    soc.listen(1)
+    conn, addr = soc.accept()
+    gdb = GDBServer(conn, sdb)
+    gdb.start()

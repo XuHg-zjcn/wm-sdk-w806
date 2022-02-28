@@ -56,6 +56,7 @@ SerDbg_Stat SDB_Read_Mem_op()
 {
     MemFlashOp op;
     SERDBG_RECV(&op, sizeof(op));
+    SERDBG_SYNC();
     SERDBG_SEND(op.addr, op.size);
 }
 

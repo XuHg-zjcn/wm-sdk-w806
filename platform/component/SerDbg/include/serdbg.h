@@ -28,9 +28,11 @@
 #include "wm_hal.h"
 
 extern UART_HandleTypeDef huart0;
+extern uint8_t sdb_sync[7];
 #define SERDBG_TIMEOUT  5
 #define SERDBG_SEND(p, size)  HAL_UART_Transmit(&huart0, (uint8_t*)(p), (size), SERDBG_TIMEOUT)
 #define SERDBG_RECV(p, size)  HAL_UART_Receive(&huart0, (uint8_t*)(p), (size), SERDBG_TIMEOUT)
+#define SERDBG_SYNC()         SERDBG_SEND(sdb_sync, sizeof(sdb_sync));
 
 typedef enum{
     SDB_OK = 0,

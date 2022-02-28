@@ -21,11 +21,12 @@
 #include "serdbg.h"
 #include "break_points.h"
 
+uint8_t sdb_sync[7] = {'\n', '+', 'S', 'D', 'B', ':', '\n'};
 
 void serdbg_parser_cmd()
 {
     _Bool pause = 0;
-    SerDbg_Cmd cmd;
+    SerDbg_Cmd cmd = 0;
     do{
         SERDBG_RECV(&cmd, 1);
         switch(cmd){
@@ -49,12 +50,12 @@ void serdbg_parser_cmd()
                 break;
             case SDB_Pause:
                 pause = 1;
-	        break;
+                break;
             case SDB_Resume:
-	        pause = 0;
-	        break;
+                pause = 0;
+                break;
             default:
-	        return;
-	}
+                return;
+        }
     }while(pause);
 }
