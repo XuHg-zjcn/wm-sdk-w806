@@ -23,11 +23,11 @@
 
 typedef enum{
   BKPT_Disable = 0,
-  BKPT_Erase,
-  BKPT_BinCmd,
-  BKPT_StrNum,
-  BKPT_StrRegBase,
-  BKPT_StrRegAll,
+  BKPT_Erase = 1,
+  BKPT_BinCmd = 2,
+  BKPT_StrNum = 3,
+  BKPT_StrRegBase = 4,
+  BKPT_StrRegAll = 5,
 }BKPT_Mode;
 
 typedef struct{

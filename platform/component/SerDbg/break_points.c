@@ -40,6 +40,7 @@ uint16_t write_0x0000(uint16_t *p)
 
     FLASH->CMD_INFO = 0x4;
     FLASH->CMD_START = FLASH_CMD_START_CMD;
+    *(uint32_t *)(0xE000F004) = (((uint32_t)p)&0xfffffff0) | (1<<1); //无效缓存行
     return *p;
 }
 

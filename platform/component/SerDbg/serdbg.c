@@ -23,6 +23,7 @@
 
 uint8_t sdb_sync[7] = {'\n', '+', 'S', 'D', 'B', ':', '\n'};
 
+//TODO: pause模式下不再发送同步头
 void serdbg_parser_cmd()
 {
     _Bool pause = 0;

@@ -112,13 +112,18 @@ class SerDbg:
         for c, data in args:
             sf += c
             sd.append(data)
-        self.ser.write(struct.pack(sf, *sd))
+        data = struct.pack(sf, *sd)
+        print('w', data.hex())
+        self.ser.write(data)
 
     def __send_dat(self, data):
         self.ser.write(data)
 
     def __recv(self, size):
-        self.queue.get()
+        # TODO: pause模式下不再接收同步头
+        g = self.queue.get()
+        if g != b'\n':
+            raise ValueError(g)
         data = self.ser.read(size)
         print('r', data.hex())
         self.queue.task_done()
@@ -155,6 +160,8 @@ class SerDbg:
 
     def New_BKPT(self, addr):
         self.__send_cmd('New_BKPT', ('I', addr), ('B', BKPT_Mode.BinCmd.value))
+        index, old, new = struct.unpack('<BHH', self.__recv(5))
+        return index, new == 0
 
     def Pause(self):
         self.__send_cmd('Pause')
@@ -163,6 +170,17 @@ class SerDbg:
     def Resume(self):
         self.__send_cmd('Resume')
         self.pause = False
+
+    def Wait_BKPT(self):
+        g = self.queue.get()
+        if g[0] != ord('B'):
+            raise ValueError(g)
+        n = int(g[1:-1])
+        print('r', f'B{n}')
+        self.pause = True
+        self.__send_cmd('Pause')
+        self.queue.task_done()
+        return n
 
 
 class GDBServer(threading.Thread):
@@ -252,6 +270,8 @@ class GDBServer(threading.Thread):
             elif recv == 'c':
                 self.ll.Resume()
                 self.__send('OK')
+                self.ll.Wait_BKPT()
+                self.__send('S05')
             elif recv == 'qC':
                 self.__send('QC00')
             elif recv == 'qOffsets':
@@ -273,6 +293,8 @@ class GDBServer(threading.Thread):
                 addr = int(addr, base=16)
                 self.ll.New_BKPT(addr)
                 self.__send('OK')
+            elif recv[0] == 'z':
+                self.__send('OK')
             elif recv == 'qTfP':
                 self.__send('l')
             elif recv == 'qSymbol::':
@@ -289,6 +311,8 @@ class GDBServer(threading.Thread):
 
 def pexit(signum, frame):
     print('exit')
+    if sdb.pause:
+        sdb.Resume()
     exit()
 
 '''
