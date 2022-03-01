@@ -178,6 +178,9 @@ void SetMode_BreakPoints_All(BKPT_Mode mode)
             }
         }
     }
+    if(mode == BKPT_None){
+        bkpt_last = -1;
+    }
 }
 
 void SDB_Mode_BKPT_op()

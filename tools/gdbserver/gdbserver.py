@@ -182,6 +182,12 @@ class SerDbg:
         self.queue.task_done()
         return n
 
+    def Set_BKPT_Mode(self, index, mode):
+        if index in {-1, 'all'}:
+            index = 0xff
+        self.__send_cmd('Mode_BKPT', ('B', index), ('B', mode.value))
+        return struct.unpack('B', self.__recv(1))
+
 
 class GDBServer(threading.Thread):
     def __init__(self, conn, ll):
@@ -264,8 +270,10 @@ class GDBServer(threading.Thread):
                 self.__send('l')
             elif recv.find('qAttached') == 0:
                 self.__send('1')
-            elif recv[:2] == 'Hc':
+            elif recv == 'Hc-1':
                 self.ll.Pause()
+                self.__send('OK')
+            elif recv == 'Hcpa410.0':
                 self.__send('OK')
             elif recv == 'c':
                 self.ll.Resume()
@@ -304,6 +312,7 @@ class GDBServer(threading.Thread):
             elif recv == 'vCont;c':
                 self.__send('OK')
             elif recv[0] == 'D':
+                self.ll.Set_BKPT_Mode('all', BKPT_Mode.BPNone)
                 self.ll.Resume()
                 self.__send('OK')
                 break
