@@ -14,6 +14,7 @@
 # GNU General Public License for more details.
 ######################################################################
 import sys
+import time
 import serial
 import socket
 import struct
@@ -117,6 +118,7 @@ class SerDbg:
         #if not self.stat:
         if not self.pause:
             self.ser.write(b'AT+SDB\r\n')
+            time.sleep(0.05)
         if name == 'Pause':
             self.pause = True
         if name == 'Resume':

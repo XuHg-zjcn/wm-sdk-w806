@@ -25,6 +25,8 @@ int atcmd_parser_err_resp(char *buf, int err_code)
 
 static int atcmd_parser_sdb_proc(struct atcmd_parser_token_t *tok, char *res_resp, u32 *res_len)
 {
+    //TODO: 修改AT指令解析器，不要读取剩余缓冲区，退出中断。
+    //这一才能保证下一个字符一定能被读取
     serdbg_regsave.stat = SDB_WaitCap;
     //下一次串口中断时保存寄存器，并进入serdbg_paser_cmd()函数
     //详细请见"uart0_irqhandler.S"
