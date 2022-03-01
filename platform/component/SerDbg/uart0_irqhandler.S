@@ -17,48 +17,56 @@
     .global UART0_IRQHandler
     .type   UART0_IRQHandler, %function
 UART0_IRQHandler:
-    nie
-    subi      sp,  4
-	stw       r15, (sp)
+    nie         //epsr epc
+    ipush       //r0-r3, r12, r13
+    subi    sp, 4
+    stw     r15, (sp)
+    //sp :  +0  +4  +8 +12 +16 +20 +24  +28 +32 | +36 ...
+    //reg: r15  r0  r1  r2  r3 r12 r13 epsr epc | old ...
 
-    //TODO: 用flag判断是否需要保存全部寄存器，节省中断耗时
-    //保存r0-r13
-    lrw     r15, serdbg_regsave
-    stm     r0-r13, (r15)
+    //判断是否需要保存
+    lrw     r0, serdbg_regsave
+    ldw     r1, (r0, 200)
+    bez     r1, Enter_AT_Parser
+    movi    r1, 0
+    stw     r1, (r0, 200)
 
-    //保存r14(sp)
-    mov    r13, sp
-    subi   r13, 12
-    stw    r13, (r15, 56)
+    //转存r0
+    ldw     r1, (sp, 4)
+    stw     r1, (r0)
 
-    //保存刚才栈里的r15
-    ldw    r13, (sp)
-    stw    r13, (r15, 60)
+    //批量保存r1-r13
+    addi    r0, 4
+    ldw     r1, (sp, 8)
+    stm     r1-r13, (r0)
 
-    //保存r16-r31, vr0-vr15
-    addi   r15, 64
-    stm    r16-r31, (r15)
-    addi   r15, 64
-    fstms  vr0-vr15, (r15)
-    subi   r15, 128
+    //保存中断前的r14(sp)值
+    mov     r1, sp
+    addi    r1, 36
+    stw     r1, (r0, 52)
+
+    //保存r15
+    stw     r15, (r0, 56)
+
+    //批量保存r16-r31, vr0-vr15
+    addi    r0, 60
+    stm     r16-r31, (r0)
+    addi    r0, 64
+    fstms   vr0-vr15, (r0)
+    subi    r0, 128
 
     //保存epsr和epc
-    ldw    r0, (sp, 4)    //mfcr   r0, epsr
-    stw    r0, (r15, 192)
-    ldw    r0, (sp, 8)    //mfcr   r0, epc
-    stw    r0, (r15, 196)
+    ldw     r1, (sp, 28)
+    stw     r1, (r0, 192)
+    ldw     r1, (sp, 32)
+    stw     r1, (r0, 196)
+    bsr     serdbg_parser_cmd
 
-    lrw    r0,  huart0
-    bsr    atcmd_parser_IRQHandler  //TODO: 自己实现一个AT指令解析器
+Enter_AT_Parser:
+    lrw     r0,  huart0
+    bsr     atcmd_parser_IRQHandler  //TODO: 自己实现一个AT指令解析器
 
-    lrw    r15, serdbg_regsave
-    ldm    r0-r13, (r15)   //暂时不恢复r14和r15
-    addi   r15, 64
-    ldm    r16-r31, (r15)
-    addi   r15, 64
-    fldms  vr0-vr15, (r15)
-    subi   r15, 128
-
-    ldw    r15, (sp)
-    addi   sp,  4
+    ldw     r15, (sp)
+    addi    sp, 4
+    ipop
     nir

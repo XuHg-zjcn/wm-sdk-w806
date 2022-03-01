@@ -17,12 +17,20 @@
 
 #include "serdbg.h"
 
+#pragma pack(4)
+typedef enum{
+	SDB_NoWait = 0,
+	SDB_WaitCap = 1,
+}SDB_RegSaveStat;
+
 typedef struct{
     uint32_t rx[32];
     uint32_t vrx[16];
     uint32_t epsr;
     void *epc;
+    SDB_RegSaveStat stat;
 }SDB_RegSave;
+#pragma pack()
 
 SerDbg_Stat SDB_Read_Reg_op();
 SerDbg_Stat SDB_Write_Reg_op();

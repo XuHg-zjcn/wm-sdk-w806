@@ -1,7 +1,10 @@
 #include "atcmd_proc.h"
 #include <stdio.h>
 #include "wm_hal.h"
+#include "reg_ram.h"
 
+
+extern SDB_RegSave serdbg_regsave;
 
 const char HwVer[] = "H0.312";
 const char FirmWareVer[] = "0.01";
@@ -22,7 +25,9 @@ int atcmd_parser_err_resp(char *buf, int err_code)
 
 static int atcmd_parser_sdb_proc(struct atcmd_parser_token_t *tok, char *res_resp, u32 *res_len)
 {
-    serdbg_parser_cmd();
+    serdbg_regsave.stat = SDB_WaitCap;
+    //下一次串口中断时保存寄存器，并进入serdbg_paser_cmd()函数
+    //详细请见"uart0_irqhandler.S"
 }
 
 static int atcmd_parser_reset_proc(struct atcmd_parser_token_t *tok, char *res_resp, u32 *res_len)
