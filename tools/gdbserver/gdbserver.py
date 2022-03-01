@@ -57,8 +57,8 @@ class SerDbg_Cmd(Enum): # Param,                       | ret
 
 
 class BKPT_Mode(Enum):
-    Disable = 0
-    Erase = 1
+    BPNone = 0
+    Ignore = 1
     BinCmd = 2
     StrNum = 3
     StrRegBase = 4

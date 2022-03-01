@@ -19,8 +19,7 @@
 extern SDB_RegSave serdbg_regsave;
 extern void Error_Handler(void);
 
-//uint8_t dbg_on = 0;
-uint8_t n_bkpt = 0;
+int bkpt_last = -1;
 BreakPoint bkpts[SERDBG_MAX_BKPT];
 
 
@@ -44,58 +43,59 @@ uint16_t write_0x0000(uint16_t *p)
     return *p;
 }
 
+int find_FreeBKPT()
+{
+    int i;
+    for(i=bkpt_last+1;i<SERDBG_MAX_BKPT;i++){
+    if(bkpts[i].mode == BKPT_None){
+            return i;
+        }
+    }
+    for(i=0;i<=bkpt_last;i++){
+        if(bkpts[i].mode == BKPT_None){
+            return i;
+        }
+    }
+    return -1;
+}
+
 int New_BreakPoint(void *p, BKPT_Mode mode)
 {
     if((uint32_t)p & 0x01){
         return -SDB_INVAILD_PTR;
-    }if(n_bkpt == SERDBG_MAX_BKPT){
+    }
+    int index = find_FreeBKPT();
+    if(index < 0){
         return -SDB_BKPT_FULL;
     }
-    //printf("%08x\r\n", (uint32_t)p);
-    //wm_flash_unlock();
-    //wm_flash_lock();
-    bkpts[n_bkpt].p = p;
-    bkpts[n_bkpt].old = *(uint16_t*)p;
-    bkpts[n_bkpt].mode = mode;
+    bkpts[index].p = p;
+    bkpts[index].old = *(uint16_t*)p;
+    bkpts[index].mode = mode;
+    bkpt_last = index;
     write_0x0000((uint16_t*)p);
-    return n_bkpt++;
+    return index;
 }
 
-SerDbg_Stat Erase_BreakPoint(int x)
+SerDbg_Stat Erase_BreakPoint(int index)
 {
-    if(x >= n_bkpt){
+    if(bkpts[index].mode == BKPT_None){
         return SDB_INVAILD_BKPT;
     }
-    if(HAL_FLASH_Write((uint32_t)bkpts[x].p, (uint8_t*)&bkpts[x].old, 2) != HAL_OK){
+    uint16_t *p = bkpts[index].p;
+    if(HAL_FLASH_Write(p, (uint8_t*)&bkpts[index].old, 2) != HAL_OK){
         return SDB_FLASH_OP_ERR;
     }
-    n_bkpt--;
-    for(;x<n_bkpt;x++){
-        bkpts[x] = bkpts[x+1];
-    }
-    return SDB_OK;
-}
-
-SerDbg_Stat Erase_BreakPoint_All()
-{
-    SerDbg_Stat stat;
-    while(n_bkpt){
-        stat = Erase_BreakPoint(n_bkpt-1);
-        if(stat != SDB_OK){
-            return stat;
-        }
-    }
+    *(uint32_t *)(0xE000F004) = (((uint32_t)p)&0xfffffff0) | (1<<1); //无效缓存行
+    bkpts[index].mode = BKPT_None;
     return SDB_OK;
 }
 
 int find_bkpt_num(void *p)
 {
-    int index = 0;
-    while(index < n_bkpt){
-        if(bkpts[index].p == p){
-            return index;
+    for(int i=0;i<SERDBG_MAX_BKPT;i++){
+        if(bkpts[i].p == p){
+            return i;
         }
-        index++;
     }
     return -1;
 }
@@ -167,6 +167,19 @@ void SDB_New_BKPT_op()
     SERDBG_SEND(p, 2);
 }
 
+void SetMode_BreakPoints_All(BKPT_Mode mode)
+{
+    for(int i=0;i<SERDBG_MAX_BKPT;i++){
+        if(bkpts[i].mode != BKPT_None){
+            if(mode == BKPT_None){
+                Erase_BreakPoint(i);
+            }else{
+                bkpts[i].mode = mode;
+            }
+        }
+    }
+}
+
 void SDB_Mode_BKPT_op()
 {
     uint8_t i;
@@ -174,22 +187,18 @@ void SDB_Mode_BKPT_op()
     SERDBG_RECV(&i, sizeof(i));
     SERDBG_RECV(&tmp, sizeof(tmp));
     if(i == 0xff){
-        if(tmp == BKPT_Erase){
-            Erase_BreakPoint_All();
-        }else{
-            for(i=0;i<n_bkpt;i++){
-                bkpts[i].mode = tmp;
-            }
-        }
-        tmp = 0x03;
-    }else if(i >= n_bkpt){
-        tmp = 0x02;
-    }else if(tmp == BKPT_Erase){
+        SetMode_BreakPoints_All(tmp);
+        tmp = 0x04;  //设置所有使用中的断点
+    }else if(i >= SERDBG_MAX_BKPT){
+        tmp = 0x03;  //无效编号：超过最大断点数
+    }else if(bkpts[i].mode == BKPT_None){
+        tmp = 0x02;  //无效编号：该断点未使用
+    }else if(tmp == BKPT_None){
         Erase_BreakPoint(i);
-        tmp = 0x01;
+        tmp = 0x01;  //清除该断点
     }else{
         bkpts[i].mode = tmp;
-        tmp = 0x00;
+        tmp = 0x00;  //设置模式
     }
     SERDBG_SYNC();
     SERDBG_SEND(&tmp, sizeof(tmp));

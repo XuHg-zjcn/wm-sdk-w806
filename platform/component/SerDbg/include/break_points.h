@@ -22,12 +22,12 @@
 #define SERDBG_MAX_BKPT 8
 
 typedef enum{
-  BKPT_Disable = 0,
-  BKPT_Erase = 1,
-  BKPT_BinCmd = 2,
-  BKPT_StrNum = 3,
-  BKPT_StrRegBase = 4,
-  BKPT_StrRegAll = 5,
+    BKPT_None = 0,       //没有设置过断点或已恢复原样
+    BKPT_Ignore = 1,     //忽略断点，但不擦除
+    BKPT_BinCmd = 2,     //进入二进制交互模式，需要配合上位机程序使用
+    BKPT_StrNum = 3,     //字符串输出断点编号
+    BKPT_StrRegBase = 4, //字符串输出基本寄存器(r0-r15, epsr, epc)
+    BKPT_StrRegAll = 5,  //字符串输出全部寄存器(r0-r31, vr0-vr15, epsr, epc)
 }BKPT_Mode;
 
 typedef struct{
@@ -36,12 +36,11 @@ typedef struct{
     BKPT_Mode mode; //断点的模式
 }BreakPoint;
 
-SerDbg_Stat debug_on();
 int New_BreakPoint(void *p, BKPT_Mode mode);
-SerDbg_Stat unset_BreakPoint(int x);
-SerDbg_Stat clear_All_BreakPoints();
-SerDbg_Stat debug_off();
+SerDbg_Stat Erase_BreakPoint(int index);
+int find_bkpt_num(void *p);
 
+void SetMode_BreakPoints_All(BKPT_Mode mode);
 void SDB_New_BKPT_op();
 void SDB_Mode_BKPT_op();
 
