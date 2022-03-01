@@ -206,8 +206,9 @@ class SerDbg:
 
 
 class GDBServer(threading.Thread):
-    def __init__(self, conn, ll):
-        self.conn = conn
+    def __init__(self, socket, ll):
+        self.socket = socket
+        self.conn = None
         self.ll = ll
         self.tmp = []
         super().__init__()
@@ -257,7 +258,7 @@ class GDBServer(threading.Thread):
                     break
                 # TODO: 完善多次读取
 
-    def run(self):
+    def Interactive(self):
         while True:
             recv = self.recv()
             print('>', recv)
@@ -333,6 +334,12 @@ class GDBServer(threading.Thread):
                 self.__send('OK')
                 break
 
+    def run(self):
+        while True:
+            self.conn, addr = soc.accept()
+            print('Connect to', addr)
+            self.Interactive()
+
 
 def pexit(signum, frame):
     print('exit')
@@ -354,6 +361,5 @@ if __name__ == '__main__':
     sdb = SerDbg(ser, queue)
     soc.bind(('127.0.0.1', 3334))
     soc.listen(1)
-    conn, addr = soc.accept()
-    gdb = GDBServer(conn, sdb)
+    gdb = GDBServer(soc, sdb)
     gdb.start()
