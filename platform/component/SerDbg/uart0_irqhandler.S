@@ -25,13 +25,14 @@ UART0_IRQHandler:
     //reg: r15  r0  r1  r2  r3 r12 r13 epsr epc | old ...
 
     //判断是否需要保存
-    lrw     r0, serdbg_regsave
-    ldw     r1, (r0, 200)
+    lrw     r0, serdbg_regsave+200
+    ldw     r1, (r0)
     bez     r1, Enter_AT_Parser
     movi    r1, 0
-    stw     r1, (r0, 200)
+    stw     r1, (r0)
 
     //转存r0
+    subi    r0, 200
     ldw     r1, (sp, 4)
     stw     r1, (r0)
 

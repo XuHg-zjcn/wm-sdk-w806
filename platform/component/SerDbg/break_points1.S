@@ -50,44 +50,45 @@ RunInstRAM:     //在内存中运行断点处的指令
 Breakpoint_Handler:
     //把r15 PUSH到栈，使用push,pop指令操作r15无法二次进入中断
     subi    sp, 4
-    stw     r15, (sp)
+    stw     r0, (sp)
 
-    //保存r0-r13
-    lrw     r15, serdbg_regsave
-    stm     r0-r13, (r15)
+    //批量保存r1-r13
+    lrw     r0, serdbg_regsave+4
+    stm     r1-r13, (r0)
 
     //保存r14
-    mov     r0, sp
-    addi    r0, 4
-    stw     r0, (r15, 56)
+    mov     r1, sp
+    addi    r1, 4
+    stw     r1, (r0, 52)
 
-    //保存刚才栈里的r15
-    ldw    r13, (sp)
-    stw    r13, (r15, 60)
+    //保存r15
+    stw     r15, (r0, 56)
 
-    //保存r16-r31, vr0-vr15
-    addi   r15, 64
-    stm    r16-r31, (r15)
-    addi   r15, 64
-    fstms  vr0-vr15, (r15)
-    subi   r15, 128
+    //批量保存r16-r31, vr0-vr15
+    addi    r0, 60
+    stm     r16-r31, (r0)
+    addi    r0, 64
+    fstms   vr0-vr15, (r0)
 
     //保存epsr和epc
-    mfcr   r0, epsr
-    stw    r0, (r15, 192)
-    mfcr   r0, epc
-    stw    r0, (r15, 196)
+    mfcr    r1, epsr
+    stw     r1, (r0, 64)
+    mfcr    r1, epc
+    stw     r1, (r0, 68)
+    subi    r0, 128     //r0=serdbg_regsave
 
-    mov    r0,  r15    //C函数的参数
-    lrw    r15,  Breakpoint_Handler_C
-    jsr    r15         //跳转到C函数
+    //保存刚才栈里的r0
+    ldw     r1, (sp)
+    stw     r1, (r0)
+
+    //r0已经是第一个参数所需的值了
+    bsr     Breakpoint_Handler_C
 Load_Regs_Run:
 //r0: 原来的16bit内容
     lrw     r2, RunInstRAM
+    cmphsi  r0, 0xc000      //判断是否为32为指令
     sth     r0, (r2)
 
-    lrw     r15, serdbg_regsave
-    cmphsi  r0, 0xc000      //判断是否为32为指令
     movi    r1, 0x5000      //先写空指令
     mfcr    r3, epc         //r3=epc
     addi    r3, 2           //r3+=2
@@ -100,19 +101,23 @@ ll16b:
     sth     r1, (r2, 2)     //保存后半字到RAM程序
     mtcr    r3, epc
 
-    ldm     r0-r13, (r15)   //暂时不恢复r14和r15
+    lrw     r0, serdbg_regsave+4
+    ldm     r1-r13, (r0)    //暂时不恢复r0,r14,r15
+    addi    r0, 60
+    ldm     r16-r31, (r0)
     addi    r15, 64
-    ldm     r16-r31, (r15)
-    addi    r15, 64
-    fldms   vr0-vr15, (r15)
-    subi    r15, 128
+    fldms   vr0-vr15, (r0)
+    subi    r0, 128         //r0=serdbg_regsave
 
     //恢复psr，不屏蔽无法再次进入中断
     /*ldw     r15, (r15, 192)
     mtcr    r15, psr*/
 
     //恢复r15
-    ldw     r15, (sp)
+    ldw     r15, (r0, 60)
+
+    //恢复r0
+    ldw     r0, (sp)
     addi    sp, 4
 
     jmpi    RunInstRAM  //跳转到内存中执行
