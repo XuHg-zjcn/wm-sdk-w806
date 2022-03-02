@@ -20,8 +20,11 @@
  **********************************************************************/
 #include "serdbg.h"
 #include "break_points.h"
+#include "reg_ram.h"
 
 uint8_t sdb_sync[7] = {'\n', '+', 'S', 'D', 'B', ':', '\n'};
+
+extern SDB_RegSave serdbg_regsave;
 
 //TODO: pause模式下不再发送同步头
 void serdbg_parser_cmd()
@@ -54,8 +57,15 @@ void serdbg_parser_cmd()
                 break;
             case SDB_Resume:
                 pause = 0;
+                serdbg_regsave.stat = SDB_NoWait;
+                break;
+            case SDB_Step:
+                pause = 0;
+                serdbg_regsave.epsr.TM = ITrack;
+                serdbg_regsave.stat = SDB_StepStop;
                 break;
             default:
+                serdbg_regsave.stat = SDB_NoWait;
                 return;
         }
     }while(pause);

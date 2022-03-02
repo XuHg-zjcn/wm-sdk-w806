@@ -25,26 +25,19 @@ void Error_Handler(void);
 
 void gpio_x()
 {
-    printf("gpio_x\r\n");
-    HAL_Delay(300);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
-    HAL_Delay(300);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
-    HAL_Delay(300);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
-    HAL_Delay(300);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
-    HAL_Delay(500);
-    HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1);
-    HAL_Delay(500); 
-    HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0 | GPIO_PIN_1);
+    for(int i=0;i<20;i++){
+        HAL_Delay(i);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
+        HAL_Delay(20-i);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
+    }
 }
 
 int main(void)
 {
     SystemClock_Config(CPU_CLK_160M);
     GPIO_Init();
-    New_BreakPoint(&gpio_x, BKPT_StrRegBase);
+    //New_BreakPoint(&gpio_x, BKPT_StrRegBase);
     printf("enter main\r\n");
     while(1){
         gpio_x();

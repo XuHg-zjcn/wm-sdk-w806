@@ -21,7 +21,7 @@ extern void Error_Handler(void);
 
 int bkpt_last = -1;
 BreakPoint bkpts[SERDBG_MAX_BKPT];
-
+uint32_t RunInstRAM;
 
 uint16_t write_0x0000(uint16_t *p)
 {
@@ -100,7 +100,7 @@ int find_bkpt_num(void *p)
     return -1;
 }
 
-uint16_t Breakpoint_Handler_C(SDB_RegSave* regs)
+void Breakpoint_Handler_C(SDB_RegSave* regs)
 {
     //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
     int index = find_bkpt_num(regs->epc);
@@ -108,6 +108,13 @@ uint16_t Breakpoint_Handler_C(SDB_RegSave* regs)
         Error_Handler();
         return 0x0000U;
     }
+    uint16_t *p = bkpts[index].p;
+    RunInstRAM = bkpts[index].old;
+    if(RunInstRAM >= 0xc0000){
+        RunInstRAM |= *(++p)<<16;
+    }
+    regs->epc = ++p;        //下一次进入Track中断有效
+    regs->epsr.TM = ITrack;
     BKPT_Mode mode = bkpts[index].mode;
     if(mode == BKPT_BinCmd){
         printf("\n+SDB:B%d\n", index);
@@ -151,7 +158,6 @@ uint16_t Breakpoint_Handler_C(SDB_RegSave* regs)
         printf("epsr: %08x\n", regs->epsr);
         printf("epc : %08x\n", regs->epc);
     }
-    return bkpts[index].old;
 }
 
 void SDB_New_BKPT_op()

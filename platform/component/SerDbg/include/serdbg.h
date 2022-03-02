@@ -29,7 +29,7 @@
 
 extern UART_HandleTypeDef huart0;
 extern uint8_t sdb_sync[7];
-#define SERDBG_TIMEOUT  5
+#define SERDBG_TIMEOUT  -1
 #define SERDBG_SEND(p, size)  HAL_UART_Transmit(&huart0, (uint8_t*)(p), (size), SERDBG_TIMEOUT)
 #define SERDBG_RECV(p, size)  HAL_UART_Receive(&huart0, (uint8_t*)(p), (size), SERDBG_TIMEOUT)
 #define SERDBG_SYNC()         SERDBG_SEND(sdb_sync, sizeof(sdb_sync));
@@ -55,7 +55,8 @@ typedef enum{           // Param,                       | ret
     SDB_Get_BKPT   = 8, // index(1B)                    | [n(1B)], set(nB)
     SDB_Pause      = 9, //                              |
     SDB_Resume     = 10,//                              |
-    SDB_About      = 11,//                              | str
+    SDB_Step       = 11,//                              |
+    SDB_About      = 12,//                              | str
 }SerDbg_Cmd;
 
 void serdbg_parser_cmd();

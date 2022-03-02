@@ -24,10 +24,15 @@ UART0_IRQHandler:
     //sp :  +0  +4  +8 +12 +16 +20 +24  +28 +32 | +36 ...
     //reg: r15  r0  r1  r2  r3 r12 r13 epsr epc | old ...
 
-    //判断是否需要保存
+    //获取状态
     lrw     r0, serdbg_regsave+200
     ldw     r1, (r0)
-    bez     r1, Enter_AT_Parser
+
+    //判断是否需要停下来
+    cmpnei  r1, 0x01
+    bt      Enter_AT_Parser
+
+    //清除标志，下次不要再停下来了
     movi    r1, 0
     stw     r1, (r0)
 

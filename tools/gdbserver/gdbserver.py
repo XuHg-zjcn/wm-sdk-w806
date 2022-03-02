@@ -68,7 +68,8 @@ class SerDbg_Cmd(Enum): # Param,                       | ret
     Get_BKPT = 8        # index(1B)                    | [n(1B)], set(nB)
     Pause = 9           #                              |
     Resume = 10         #                              |
-    About = 11          #                              | str
+    Step = 11           #                              |
+    About = 12          #                              | str
 
 
 class BKPT_Mode(Enum):
@@ -174,8 +175,8 @@ class SerDbg:
         self.__send_cmd('Read_Mem', ('I', addr), ('H', len(data)))
         self.__send_dat(data)
 
-    def New_BKPT(self, addr):
-        self.__send_cmd('New_BKPT', ('I', addr), ('B', BKPT_Mode.BinCmd.value))
+    def New_BKPT(self, addr, mode=BKPT_Mode.BinCmd):
+        self.__send_cmd('New_BKPT', ('I', addr), ('B', mode.value))
         index, old, new = struct.unpack('<BHH', self.__recv(5))
         return index, new == 0
 
@@ -203,6 +204,18 @@ class SerDbg:
             index = 0xff
         self.__send_cmd('Mode_BKPT', ('B', index), ('B', mode.value))
         return struct.unpack('B', self.__recv(1))
+
+    def Step(self):
+        self.__send_cmd('Step')
+
+    def Wait_Step(self):
+        g = self.queue.get()
+        if g[0] != ord('S'):
+            raise ValueError(g)
+        print('s')
+        self.pause = True
+        self.__send_cmd('Pause')
+        self.queue.task_done()
 
 
 class GDBServer(threading.Thread):
@@ -263,7 +276,7 @@ class GDBServer(threading.Thread):
             recv = self.recv()
             print('>', recv)
             if recv.find('qSupported') >= 0:
-                self.__send('PacketSize=1000;multiprocess+;swbreak+;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;QThreadEvents+;no-resumed+')
+                self.__send('PacketSize=1000;multiprocess+;swbreak+;hwbreak+')
             elif recv.find('qXfer:features:read:target.xml:') >= 0:
                 x = recv.find('xml:')
                 self.send_file(recv[x+4:], 'target.xml')
@@ -296,6 +309,11 @@ class GDBServer(threading.Thread):
                 self.ll.Resume()
                 self.__send('OK')
                 self.ll.Wait_BKPT()
+                self.__send('S05')
+            elif recv == 's':
+                self.ll.Step()
+                self.__send('OK')
+                self.ll.Wait_Step()
                 self.__send('S05')
             elif recv == 'qC':
                 self.__send('QC00')

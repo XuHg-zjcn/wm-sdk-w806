@@ -17,16 +17,40 @@
 
 #include "serdbg.h"
 
-#pragma pack(4)
 typedef enum{
-	SDB_NoWait = 0,
-	SDB_WaitCap = 1,
+    Norm = 0,
+    ITrack = 1,
+    Undef = 2,
+    JTrack = 3,
+}PSR_TM;
+
+#pragma pack(1)
+typedef struct{
+    _Bool C:1;
+    int resv1:5;
+    _Bool IE:1;
+    _Bool IC:1;
+    _Bool EE:1;
+    _Bool MM:1;
+    int resv2:4;
+    PSR_TM TM:2;
+    uint8_t VEC:8;
+    int resv3:7;
+    _Bool S:1;
+}EPSR_t;
+#pragma pack()
+
+typedef enum{
+    SDB_NoWait = 0,
+    SDB_UARTCap = 1,
+    SDB_StepStop = 2
 }SDB_RegSaveStat;
 
+#pragma pack(4)
 typedef struct{
     uint32_t rx[32];
     uint32_t vrx[16];
-    uint32_t epsr;
+    EPSR_t epsr;
     void *epc;
     SDB_RegSaveStat stat;
 }SDB_RegSave;
