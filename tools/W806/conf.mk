@@ -73,6 +73,7 @@ ifeq ($(VERBOSE),YES)
     LINK = $(TOOL_CHAIN_PATH)$(TOOL_CHAIN_PREFIX)-gcc
     OBJCOPY = $(TOOL_CHAIN_PATH)$(TOOL_CHAIN_PREFIX)-objcopy
     OBJDUMP = $(TOOL_CHAIN_PATH)$(TOOL_CHAIN_PREFIX)-objdump
+    DBG  = $(TOOL_CHAIN_PATH)$(TOOL_CHAIN_PREFIX)-gdb
 else
     AR      = @echo "AR       $(notdir $@)" 2>/dev/null; $(TOOL_CHAIN_PATH)$(TOOL_CHAIN_PREFIX)-ar
     ASM     = @echo "ASM      $<"; $(TOOL_CHAIN_PATH)$(TOOL_CHAIN_PREFIX)-gcc
@@ -81,6 +82,7 @@ else
     LINK    = @echo "LINK     $(notdir $(IMAGEODIR)/$(TARGET).elf)"; $(TOOL_CHAIN_PATH)$(TOOL_CHAIN_PREFIX)-gcc
     OBJCOPY = @echo "OBJCOPY  $(notdir $(FIRMWAREDIR)/$(TARGET)/$(TARGET).bin)"; $(TOOL_CHAIN_PATH)$(TOOL_CHAIN_PREFIX)-objcopy
     OBJDUMP = @echo "OBJDUMP  $<"; $(TOOL_CHAIN_PATH)$(TOOL_CHAIN_PREFIX)-objdump
+    DBG     = @echo "DBG      $<"; $(TOOL_CHAIN_PATH)$(TOOL_CHAIN_PREFIX)-gdb
 endif
 
 LDDIR = $(TOP_DIR)/ld/$(CONFIG_ARCH_TYPE)

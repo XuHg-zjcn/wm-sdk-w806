@@ -171,6 +171,11 @@ flash:all
 erase:
 	@$(WM_TOOL) -c $(DL_PORT) -rs at -eo all
 
+debug:
+	@$(TOP_DIR)/tools/gdbserver/gdbserver.py $(DL_PORT) &
+	@$(DBG) -se=$(IMAGEODIR)/$(TARGET).elf -ex "set architecture csky:any" -ex "target remote 127.0.0.1:3334"
+	@#TODO: 退出gdb后关掉gdbserver
+
 .subdirs:
 	@set -e; $(foreach d, $(SUBDIRS), $(MAKE) -C $(d);)
 
