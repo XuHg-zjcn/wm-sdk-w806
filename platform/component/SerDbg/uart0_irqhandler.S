@@ -68,6 +68,27 @@ UART0_IRQHandler:
     stw     r1, (r0, 196)
     bsr     serdbg_parser_cmd
 
+    lrw     r0,  huart0
+    bsr     atcmd_parser_IRQHandler  //TODO: 自己实现一个AT指令解析器
+
+    lrw     r0, serdbg_regsave+128
+    ldw     r1, (r0, 64)
+    stw     r1, (sp, 28)  //写入epsr
+    ldw     r1, (r0, 68)
+    stw     r1, (sp, 32)  //写入epc
+
+    //恢复vr0-vr15, r16-r31, r1-r13, r15
+    fldms   vr0-vr15, (r0)
+    subi    r0, 64
+    ldm     r16-r31, (r0)
+    subi    r0, 60
+    ldm     r1-r13, (r0)
+
+    ldw     r15, (sp)
+    addi    sp, 4
+    ipop
+    nir
+
 Enter_AT_Parser:
     lrw     r0,  huart0
     bsr     atcmd_parser_IRQHandler  //TODO: 自己实现一个AT指令解析器

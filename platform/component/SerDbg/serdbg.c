@@ -61,8 +61,7 @@ void serdbg_parser_cmd()
                 break;
             case SDB_Step:
                 pause = 0;
-                serdbg_regsave.epsr.TM = ITrack;
-                serdbg_regsave.stat = SDB_StepStop;
+                RunStep();
                 break;
             default:
                 serdbg_regsave.stat = SDB_NoWait;

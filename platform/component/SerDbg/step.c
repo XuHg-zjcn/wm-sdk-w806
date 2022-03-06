@@ -12,15 +12,72 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  **********************************************************************/
-#include "break_points.h"
+#include "step.h"
 #include "reg_ram.h"
 
-extern SDB_RegSave serdbg_regsave;
 
+#define MSK_HIGH(msk)     (0x80000000>>__builtin_clz(msk))
+#define ZERO_EXT(x, msk)  ((x&msk)>>__builtin_ctz(msk))
+#define SIGN_EXT(x, msk)  (ZERO_EXT(x, msk)-((MSK_HIGH(msk)&x)?1U<<__builtin_popcount(msk):0))
+
+
+extern SDB_RegSave serdbg_regsave;
 const uint8_t TrackSync[] = {'\n', '+', 'S', 'D', 'B', ':', 'S', '\n'};
+uint32_t RunInstRAM = 0;
+
+
+void RunStep_RAM()
+{
+    //以下指令对程序指针(PC)进行了读操作，需要用程序模拟
+    //BSR, LRW, JSR
+    uint8_t h6 = (RunInstRAM&0xffff)>>10;
+    if(h6 == 0b111000) {                                   //bsr32
+        serdbg_regsave.rx[15] = serdbg_regsave.epc+4;
+        serdbg_regsave.epc += SIGN_EXT(RunInstRAM, 0x03ff)<<17;
+        serdbg_regsave.epc += (RunInstRAM>>16)<<1;
+    }else if((h6&0b111011) == 0b000000) {                  //lrw16
+        uint32_t z = ZERO_EXT(RunInstRAM, 0x00e0);
+        uint32_t offset = (ZERO_EXT(RunInstRAM, 0x03)<<5) | (ZERO_EXT(RunInstRAM, 0x1f));
+        if(!(h6 & 0b000100)) {
+            offset |= 0x80;                                //lrw16-1
+        }
+        serdbg_regsave.rx[z] += *(uint32_t *)((serdbg_regsave.epc+(offset<<2))&0xfffffffc);
+        serdbg_regsave.epc += 2;
+    }else if(((RunInstRAM&0xffff)>>5) == 0b11101010100) {  //lrw32
+        uint32_t z = ZERO_EXT(RunInstRAM, 0x001f);
+        uint32_t offset = RunInstRAM>>16;
+        serdbg_regsave.rx[z] += *(uint32_t *)((serdbg_regsave.epc+(offset<<2))&0xfffffffc);
+        serdbg_regsave.epc += 4;
+    }else if((RunInstRAM&0xffc3) == 0x7bc1) {              //jsr16
+        uint32_t x = ZERO_EXT(RunInstRAM, 0x3c);
+        uint32_t tmp = serdbg_regsave.epc + 4;  //质疑：手册上是+4，需测试
+        serdbg_regsave.epc = serdbg_regsave.rx[x] & 0xfffffffe;
+        serdbg_regsave.rx[15] = tmp;
+    }else{
+        serdbg_regsave.epsr.TM = ITrack;
+        serdbg_regsave.epc = (uint32_t)&RunInstRAM;
+        serdbg_regsave.stat = SDB_StepStop;
+        return;
+    }
+    //上面没有返回
+    Track_Handler_C(&serdbg_regsave);
+}
+
+void RunStep()
+{
+    if(RunInstRAM){
+        RunStep_RAM();
+    }else{
+        serdbg_regsave.epsr.TM = ITrack;
+        serdbg_regsave.stat = SDB_StepStop;
+    }
+}
 
 void Track_Handler_C(SDB_RegSave *regs)
 {
+    if(RunInstRAM != 0){
+        RunInstRAM = 0;
+    }
     if(regs->stat == SDB_StepStop){
         regs->epsr.TM = ITrack;
         SERDBG_SEND(TrackSync, sizeof(TrackSync));

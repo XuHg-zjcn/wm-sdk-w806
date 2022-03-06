@@ -45,9 +45,15 @@ Track_Handler:
     mfcr    r1, epc
     lsri    r2, r1, 24 //r1>>=24
     cmphsi  r2, 0x20   //是否在RAM区
-    bt      NoSave     //在RAM区，跳过保存
+    bf      SaveEPC    //不在RAM区，保存当前epc
+
+    //在RAM中，EPC新值=上次保存值+(当前EPC-RunInstRAM)
+    lrw     r2, RunInstRAM
+    subu    r1, r1, r2
+    ldw     r2, (r0, 68)
+    addu    r1, r1, r2
+SaveEPC:
     stw     r1, (r0, 68)
-NoSave:
     subi    r0, 128    //r0=serdbg_regsave
 
     //转存刚才栈里的r0

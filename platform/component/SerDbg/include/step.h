@@ -12,10 +12,13 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  **********************************************************************/
-#ifndef STEP_C
-#define STEP_C
+#ifndef STEP_H
+#define STEP_H
+
+#include "reg_ram.h"
 
 
+void RunStep();
 void Track_Handler_C(SDB_RegSave *regs);
 
 #endif

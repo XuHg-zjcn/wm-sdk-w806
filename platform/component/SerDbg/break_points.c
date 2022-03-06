@@ -14,6 +14,7 @@
  **********************************************************************/
 #include "break_points.h"
 #include "reg_ram.h"
+#include "step.h"
 #include "wm_hal.h"
 
 extern SDB_RegSave serdbg_regsave;
@@ -21,7 +22,7 @@ extern void Error_Handler(void);
 
 int bkpt_last = -1;
 BreakPoint bkpts[SERDBG_MAX_BKPT];
-uint32_t RunInstRAM;
+extern uint32_t RunInstRAM;
 
 uint16_t write_0x0000(uint16_t *p)
 {
@@ -113,7 +114,6 @@ void Breakpoint_Handler_C(SDB_RegSave* regs)
     if(RunInstRAM >= 0xc0000){
         RunInstRAM |= *(++p)<<16;
     }
-    regs->epc = ++p;        //下一次进入Track中断有效
     regs->epsr.TM = ITrack;
     BKPT_Mode mode = bkpts[index].mode;
     if(mode == BKPT_BinCmd){

@@ -51,7 +51,7 @@ typedef struct{
     uint32_t rx[32];
     uint32_t vrx[16];
     EPSR_t epsr;
-    void *epc;
+    uint32_t epc;
     SDB_RegSaveStat stat;
 }SDB_RegSave;
 #pragma pack()
