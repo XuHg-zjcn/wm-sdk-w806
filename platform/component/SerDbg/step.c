@@ -53,7 +53,7 @@ void RunStep_RAM()
         uint32_t tmp = serdbg_regsave.epc + 4;  //质疑：手册上是+4，需测试
         serdbg_regsave.epc = serdbg_regsave.rx[x] & 0xfffffffe;
         serdbg_regsave.rx[15] = tmp;
-    }else{
+	}else{
         serdbg_regsave.epsr.TM = ITrack;
         serdbg_regsave.epc = (uint32_t)&RunInstRAM;
         serdbg_regsave.stat = SDB_StepStop;
@@ -76,13 +76,13 @@ void RunStep()
 void Track_Handler_C(SDB_RegSave *regs, uint32_t epc)
 {
     if(RunInstRAM != 0){
-        RunInstRAM = 0;
-        if(epc >= 0x20000000){
-            //使用比较判断是否相对跳转不可靠
-            //可能发生绝对跳转到RAM其他区域或相对跳转后小于0x20000000
-            //当前epc在内存区，把差值加到旧的epc上
+      //判断所执行的指令是否发生绝对跳转
+      if((RunInstRAM&0xffc3) != 0x7800 && //不是jmp16
+         (RunInstRAM&0xffe0) != 0x1480) { //不是pop16
+            //没有发生绝对跳转，把差值加到旧的epc上
             epc = regs->epc + (epc - (uint32_t)&RunInstRAM);
         }
+        RunInstRAM = 0;
     }
     regs->epc = epc;
     if(regs->stat == SDB_StepStop){
