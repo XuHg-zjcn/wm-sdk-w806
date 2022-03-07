@@ -76,11 +76,50 @@ class BKPT_Mode(Enum):
     StrRegAll = 5
 
 
+class BKPTS:
+    def __init__(self):
+        self.d = {}    # key:addr, value:[index, mode, old]
+        self.tmp = {}  # key:addr, value:mode_
+
+    def add_bkpt(self, addr, index, mode, old=None):
+        assert isinstance(addr, int)
+        assert isinstance(index, int)
+        assert isinstance(mode, BKPT_Mode)
+        assert isinstance(old, (type(None), bytes))
+        self.d[addr] = [index, mode, old]
+    # remove bkpt: `set_mode(addr, BKPT_Mode.BPNone)`
+
+    def set_mode(self, addr, mode_):
+        assert isinstance(mode_, BKPT_Mode)
+        if addr not in self.d:
+            raise KeyError
+        self.tmp[addr] = mode_
+
+    def update(self):
+        invalid = []
+        for addr, mode_ in self.tmp.items():
+            if self.d[addr][1] == mode_:
+                invalid.append(addr)
+        for k in invalid:
+            self.tmp.pop(k)
+        ret = []
+        for addr, mode_ in self.tmp.items():
+            index = self.d[addr][0]
+            ret.append((index, mode_))
+            if mode_ == BKPT_Mode.BPNone:
+                self.d.pop(addr)
+            else:
+                self.d[addr][1] = mode_
+        self.tmp.clear()
+        return ret
+
+
 class SerDbg:
     def __init__(self, ser, queue):
         self.ser = ser
         self.queue = queue
         self.pause = False
+        self.bkpts = BKPTS()
 
     def __send_cmd(self, name, *args):
         #if not self.stat:
@@ -143,15 +182,26 @@ class SerDbg:
         self.__send_dat(data)
 
     def New_BKPT(self, addr, mode=BKPT_Mode.BinCmd):
+        if addr in self.bkpts.d:
+            self.bkpts.set_mode(addr, mode)
+            return
         self.__send_cmd('New_BKPT', ('I', addr), ('B', mode.value))
-        index, old, new = struct.unpack('<BHH', self.__recv(5))
+        res = self.__recv(5)
+        index, old, new = struct.unpack('<BHH', res)
+        self.bkpts.add_bkpt(addr, index, mode, res[1:3])
         return index, new == 0
+
+    def Remove_BKPT(self, addr):
+        # TODO: 断点可能用完，需要自动清理
+        self.bkpts.set_mode(addr, BKPT_Mode.Ignore)
 
     def Pause(self):
         self.__send_cmd('Pause')
         self.pause = True
 
     def Resume(self):
+        for index, mode in self.bkpts.update():
+            self.Set_BKPT_Mode(index, mode)
         self.__send_cmd('Resume')
         self.pause = False
 
