@@ -23,6 +23,7 @@ extern void Error_Handler(void);
 int bkpt_last = -1;
 BreakPoint bkpts[SERDBG_MAX_BKPT];
 extern uint32_t RunInstRAM;
+extern uint32_t RunInstRAM_epc;
 
 uint16_t write_0x0000(uint16_t *p)
 {

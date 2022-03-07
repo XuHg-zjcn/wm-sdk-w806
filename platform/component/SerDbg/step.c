@@ -24,6 +24,7 @@
 extern SDB_RegSave serdbg_regsave;
 const uint8_t TrackSync[] = {'\n', '+', 'S', 'D', 'B', ':', 'S', '\n'};
 uint32_t RunInstRAM = 0;  //不需要运行指令时必须为0，否则会影响正常运行。
+uint32_t RunInstRAM_epc = 0;
 
 
 void RunStep_RAM()
@@ -55,22 +56,33 @@ void RunStep_RAM()
         serdbg_regsave.rx[15] = tmp;
 	}else{
         serdbg_regsave.epsr.TM = ITrack;
+        RunInstRAM_epc = serdbg_regsave.epc;
         serdbg_regsave.epc = (uint32_t)&RunInstRAM;
-        serdbg_regsave.stat = SDB_StepStop;
         return;
     }
     //上面没有返回
+    RunInstRAM = 0;
     Track_Handler_C(&serdbg_regsave, serdbg_regsave.epc);
 }
 
 void RunStep()
 {
+    serdbg_regsave.stat = SDB_StepStop;
     if(RunInstRAM){
         RunStep_RAM();
     }else{
         serdbg_regsave.epsr.TM = ITrack;
-        serdbg_regsave.stat = SDB_StepStop;
     }
+}
+
+void RunResume()
+{
+    serdbg_regsave.stat = SDB_NoWait;
+    if(RunInstRAM){
+	    RunStep_RAM();
+    }else{
+	    serdbg_regsave.epsr.TM = Norm;
+	}
 }
 
 void Track_Handler_C(SDB_RegSave *regs, uint32_t epc)
@@ -80,7 +92,7 @@ void Track_Handler_C(SDB_RegSave *regs, uint32_t epc)
       if((RunInstRAM&0xffc3) != 0x7800 && //不是jmp16
          (RunInstRAM&0xffe0) != 0x1480) { //不是pop16
             //没有发生绝对跳转，把差值加到旧的epc上
-            epc = regs->epc + (epc - (uint32_t)&RunInstRAM);
+            epc = RunInstRAM_epc + (epc - (uint32_t)&RunInstRAM);
         }
         RunInstRAM = 0;
     }

@@ -21,6 +21,7 @@
 #include "serdbg.h"
 #include "break_points.h"
 #include "reg_ram.h"
+#include "step.h"
 
 uint8_t sdb_sync[7] = {'\n', '+', 'S', 'D', 'B', ':', '\n'};
 
@@ -55,17 +56,14 @@ void serdbg_parser_cmd()
             case SDB_Pause:
                 pause = 1;
                 break;
-            case SDB_Resume:
+            case SDB_Resume: default:
                 pause = 0;
-                serdbg_regsave.stat = SDB_NoWait;
+                RunResume();
                 break;
             case SDB_Step:
                 pause = 0;
                 RunStep();
                 break;
-            default:
-                serdbg_regsave.stat = SDB_NoWait;
-                return;
         }
     }while(pause);
 }

@@ -63,10 +63,6 @@ Breakpoint_Handler:
     ldw     r1, (sp)
     stw     r1, (r0)
 
-    //第一次恢复时
-    lrw     r1, RunInstRAM
-    mtcr    r1, epc
-
     //r0已经是第一个参数所需的值了
     bsr     Breakpoint_Handler_C
     //在C语言中把断点处的代码搬到RAM
@@ -74,6 +70,8 @@ Breakpoint_Handler:
     lrw     r0, serdbg_regsave+128
     ldw     r1, (r0, 64)
     mtcr    r1, epsr
+    ldw     r1, (r0, 68)
+    mtcr    r1, epc
 
     //恢复vr0-vr15, r16-r31, r1-r13, r15
     fldms   vr0-vr15, (r0)

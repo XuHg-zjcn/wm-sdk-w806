@@ -224,6 +224,7 @@ class SerDbg:
 
     def Step(self):
         self.__send_cmd('Step')
+        self.pause = False
 
     def Wait_Step(self):
         g = self.queue.get()
