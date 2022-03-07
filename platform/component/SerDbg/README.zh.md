@@ -5,7 +5,7 @@
 ## 使用方法
 ```bash
 make flash
-./tools/gdbserver/gdbserver.py ttyUSB0
+./tools/gdbserver/main.py ttyUSB0
 
 #在另一个窗口中打开
 csky-abiv2-elf-gdb bin/build/W806/image/W806.elf -ex "target remote 127.0.0.1:3334"
@@ -62,7 +62,7 @@ rm -r tools/gdbserver
 make all
 ```
 如果有编译错误请手动修复，移除所有调用本程序的代码。  
-配套的上位机程序`tools/gdbserver/gdbserver.py`也采用GPLv3或更新授权  
+配套的上位机程序`tools/gdbserver/`文件夹下的所有文件也采用GPLv3或更新授权  
 
 --------------------
 
