@@ -23,7 +23,7 @@
 
 extern SDB_RegSave serdbg_regsave;
 const uint8_t TrackSync[] = {'\n', '+', 'S', 'D', 'B', ':', 'S', '\n'};
-uint32_t RunInstRAM = 0;
+uint32_t RunInstRAM = 0;  //不需要运行指令时必须为0，否则会影响正常运行。
 
 
 void RunStep_RAM()
@@ -60,7 +60,7 @@ void RunStep_RAM()
         return;
     }
     //上面没有返回
-    Track_Handler_C(&serdbg_regsave);
+    Track_Handler_C(&serdbg_regsave, serdbg_regsave.epc);
 }
 
 void RunStep()
@@ -73,11 +73,18 @@ void RunStep()
     }
 }
 
-void Track_Handler_C(SDB_RegSave *regs)
+void Track_Handler_C(SDB_RegSave *regs, uint32_t epc)
 {
     if(RunInstRAM != 0){
         RunInstRAM = 0;
+        if(epc >= 0x20000000){
+            //使用比较判断是否相对跳转不可靠
+            //可能发生绝对跳转到RAM其他区域或相对跳转后小于0x20000000
+            //当前epc在内存区，把差值加到旧的epc上
+            epc = regs->epc + (epc - (uint32_t)&RunInstRAM);
+        }
     }
+    regs->epc = epc;
     if(regs->stat == SDB_StepStop){
         regs->epsr.TM = ITrack;
         SERDBG_SEND(TrackSync, sizeof(TrackSync));

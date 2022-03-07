@@ -39,27 +39,16 @@ Track_Handler:
     //保存epsr
     mfcr    r1, epsr
     stw     r1, (r0, 64)
-
-    //保存epc，需要判断
-    //TODO: 可能遇到访问PC的指令，需要编写模拟程序
-    mfcr    r1, epc
-    lsri    r2, r1, 24 //r1>>=24
-    cmphsi  r2, 0x20   //是否在RAM区
-    bf      SaveEPC    //不在RAM区，保存当前epc
-
-    //在RAM中，EPC新值=上次保存值+(当前EPC-RunInstRAM)
-    lrw     r2, RunInstRAM
-    subu    r1, r1, r2
-    ldw     r2, (r0, 68)
-    addu    r1, r1, r2
-SaveEPC:
-    stw     r1, (r0, 68)
     subi    r0, 128    //r0=serdbg_regsave
 
     //转存刚才栈里的r0
     ldw     r1, (sp)
     stw     r1, (r0)
 
+    //当前epc作为C语言函数的第二个参数，不直接保存
+    mfcr    r1, epc
+
+    //进入C语言函数
     bsr     Track_Handler_C
 
     //恢复epsr, epc

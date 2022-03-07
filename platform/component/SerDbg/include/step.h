@@ -19,6 +19,6 @@
 
 
 void RunStep();
-void Track_Handler_C(SDB_RegSave *regs);
+void Track_Handler_C(SDB_RegSave *regs, uint32_t epc);
 
 #endif
