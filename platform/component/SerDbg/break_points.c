@@ -88,6 +88,10 @@ SerDbg_Stat Erase_BreakPoint(int index)
         return SDB_FLASH_OP_ERR;
     }
     *(uint32_t *)(0xE000F004) = (((uint32_t)p)&0xfffffff0) | (1<<1); //无效缓存行
+    if((uint32_t)p == RunInstRAM_epc){
+        //擦除的是当前断点
+        RunInstRAM = 0;
+    }
     bkpts[index].mode = BKPT_None;
     return SDB_OK;
 }

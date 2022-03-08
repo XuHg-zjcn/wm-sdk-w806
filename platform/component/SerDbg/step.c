@@ -62,6 +62,7 @@ void RunStep_RAM()
     }
     //上面没有返回
     RunInstRAM = 0;
+    RunInstRAM_epc = 0;
     Track_Handler_C(&serdbg_regsave, serdbg_regsave.epc);
 }
 
@@ -95,10 +96,10 @@ void Track_Handler_C(SDB_RegSave *regs, uint32_t epc)
             epc = RunInstRAM_epc + (epc - (uint32_t)&RunInstRAM);
         }
         RunInstRAM = 0;
+        RunInstRAM_epc = 0;
     }
     regs->epc = epc;
     if(regs->stat == SDB_StepStop){
-        regs->epsr.TM = ITrack;
         SERDBG_SEND(TrackSync, sizeof(TrackSync));
         serdbg_parser_cmd();
     }else{
