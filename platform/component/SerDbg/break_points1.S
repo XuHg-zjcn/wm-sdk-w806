@@ -73,17 +73,16 @@ Breakpoint_Handler:
     ldw     r1, (r0, 68)
     mtcr    r1, epc
 
-    //恢复vr0-vr15, r16-r31, r1-r13, r15
+    //恢复vr0-vr15, r16-r31, r1-r15
     fldms   vr0-vr15, (r0)
     subi    r0, 64
     ldm     r16-r31, (r0)
     subi    r0, 60
-    ldm     r1-r13, (r0)
-    ldw     r15, (r0, 56)
+    ldm     r1-r15, (r0)
 
     //恢复r0
+    subi    r0, 4
     ldw     r0, (r0)
-    addi    sp, 4
 
     rte     //epc和epsr已经设置过了
     .size   Breakpoint_Handler, . - Breakpoint_Handler
