@@ -36,7 +36,7 @@ SerDbg_Stat SDB_Read_Reg_op()
 {
     RegOp op;
     SERDBG_RECV(&op, sizeof(op));
-	SERDBG_SYNC();
+    SERDBG_SYNC();
     if((op.rx < op.ry) && (op.ry <= 50)){
         SERDBG_SEND((uint32_t *)&serdbg_regsave+op.rx, (op.ry-op.rx)*4);
     }

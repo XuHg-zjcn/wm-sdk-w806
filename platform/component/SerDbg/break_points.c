@@ -49,7 +49,7 @@ int find_FreeBKPT()
 {
     int i;
     for(i=bkpt_last+1;i<SERDBG_MAX_BKPT;i++){
-    if(bkpts[i].mode == BKPT_None){
+        if(bkpts[i].mode == BKPT_None){
             return i;
         }
     }
@@ -121,6 +121,10 @@ void Breakpoint_Handler_C(SDB_RegSave* regs)
     }
     regs->epsr.TM = ITrack;
     BKPT_Mode mode = bkpts[index].mode;
+    if(mode == BKPT_Ignore){
+        RunResume();
+        return;
+    }
     if(mode == BKPT_BinCmd){
         printf("\n+SDB:B%d\n", index);
         serdbg_parser_cmd();
