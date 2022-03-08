@@ -38,18 +38,15 @@ Breakpoint_Handler:
     lrw     r0, serdbg_regsave+4
     stm     r1-r13, (r0)
 
-    //保存r14
+    //保存中断前的r14(sp)
     mov     r1, sp
     addi    r1, 4
     stw     r1, (r0, 52)
 
-    //保存r15
-    stw     r15, (r0, 56)
-
-    //批量保存r16-r31, vr0-vr15
-    addi    r0, 60
-    stm     r16-r31, (r0)
-    addi    r0, 64
+    //批量保存r15-r31, vr0-vr15
+    addi    r0, 56
+    stm     r15-r31, (r0)
+    addi    r0, 68
     fstms   vr0-vr15, (r0)
 
     //保存epsr和epc
@@ -73,12 +70,10 @@ Breakpoint_Handler:
     ldw     r1, (r0, 68)
     mtcr    r1, epc
 
-    //恢复vr0-vr15, r16-r31, r1-r15
+    //批量恢复vr0-vr15, r1-r31
     fldms   vr0-vr15, (r0)
-    subi    r0, 64
-    ldm     r16-r31, (r0)
-    subi    r0, 60
-    ldm     r1-r15, (r0)
+    subi    r0, 124
+    ldm     r1-r31, (r0)
 
     //恢复r0
     subi    r0, 4

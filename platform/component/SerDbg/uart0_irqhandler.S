@@ -49,28 +49,26 @@ UART0_IRQHandler:
     ldw     r1, (sp, 8)
     stm     r1-r13, (r0)
 
-    //保存中断前的r14(sp)值
+    //保存中断前的r14(sp)
     mov     r1, sp
     addi    r1, 36
     stw     r1, (r0, 52)
 
-    //保存r15
-    stw     r15, (r0, 56)
-
-    //批量保存r16-r31, vr0-vr15
-    addi    r0, 60
-    stm     r16-r31, (r0)
-    addi    r0, 64
+    //批量保存r15-r31, vr0-vr15
+    addi    r0, 56
+    stm     r15-r31, (r0)
+    addi    r0, 68
     fstms   vr0-vr15, (r0)
-    subi    r0, 128
 
     //保存epsr和epc
     ldw     r1, (sp, 28)
-    stw     r1, (r0, 192)
+    stw     r1, (r0, 64)
     ldw     r1, (sp, 32)
-    stw     r1, (r0, 196)
-    bsr     serdbg_parser_cmd
+    stw     r1, (r0, 68)
+    subi    r0, 128
 
+    //进入SDB交互
+    bsr     serdbg_parser_cmd
 
     lrw     r0, serdbg_regsave+128
     ldw     r1, (r0, 64)
@@ -78,12 +76,10 @@ UART0_IRQHandler:
     ldw     r1, (r0, 68)
     mtcr    r1, epc   //写入epc
 
-    //恢复vr0-vr15, r16-r31, r1-r15
+    //恢复vr0-vr15, r1-r31
     fldms   vr0-vr15, (r0)
-    subi    r0, 64
-    ldm     r16-r31, (r0)
-    subi    r0, 60
-    ldm     r1-r15, (r0)
+    subi    r0, 124
+    ldm     r1-r31, (r0)
 
     //恢复r0
     subi    r0, 4
