@@ -136,6 +136,9 @@ class GDBServer(threading.Thread):
                 self.ll.New_BKPT(addr)
                 self.__send('OK')
             elif recv[0] == 'z':
+                Type, addr, size = recv[1:].split(',')
+                addr = int(addr, base=16)
+                self.ll.Remove_BKPT(addr)
                 self.__send('OK')
             elif recv == 'qTfP':
                 self.__send('l')
