@@ -19,12 +19,14 @@ import socket
 import signal
 import queue
 from sermon import SerMon
-from serdbg import SerDbg
+from serdbg import SerDbg, BKPT_Mode
 from gdbserver import GDBServer
 
 
 def pexit(signum, frame):
     print('exit')
+    if len(sdb.bkpts.d) != 0:
+        sdb.Set_BKPT_Mode('all', BKPT_Mode.BPNone)
     if sdb.pause:
         sdb.Resume()
     exit()
