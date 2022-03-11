@@ -220,7 +220,7 @@ class SerDbg:
         if index in {-1, 'all'}:
             index = 0xff
         self.__send_cmd('Mode_BKPT', ('B', index), ('B', mode.value))
-        return struct.unpack('B', self.__recv(1))
+        return struct.unpack('B', self.__recv(1))[0]
 
     def Step(self):
         self.__send_cmd('Step')
