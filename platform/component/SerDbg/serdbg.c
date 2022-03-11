@@ -67,3 +67,10 @@ void serdbg_parser_cmd()
         }
     }while(pause);
 }
+
+void SerDbg_UART_Handler_C(UART_HandleTypeDef* huart)
+{
+    uint32_t isrflags = READ_REG(huart->Instance->INTS);
+    huart->Instance->INTS |= isrflags;
+    serdbg_parser_cmd();
+}

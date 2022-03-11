@@ -60,5 +60,6 @@ typedef enum{           // Param,                       | ret
 }SerDbg_Cmd;
 
 void serdbg_parser_cmd();
+void SerDbg_UART_Handler_C(UART_HandleTypeDef* huart);
 
 #endif

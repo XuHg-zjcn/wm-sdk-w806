@@ -68,7 +68,8 @@ UART0_IRQHandler:
     subi    r0, 128
 
     //进入SDB交互
-    bsr     serdbg_parser_cmd
+    lrw     r0,  huart0
+    bsr     SerDbg_UART_Handler_C
 
     lrw     r0, serdbg_regsave+128
     ldw     r1, (r0, 64)
