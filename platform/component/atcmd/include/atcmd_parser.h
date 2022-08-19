@@ -1,6 +1,8 @@
-#ifndef __ATCMD_PARSER_H__
-#define __ATCMD_PARSER_H__
+#ifndef ATCMD_PARSER_H
+#define ATCMD_PARSER_H
 
-void factory_atcmd_init(void);
+#include "wm_hal.h"
+
+void atcmd_parser_IRQHandler(UART_HandleTypeDef* huart);
 
 #endif
