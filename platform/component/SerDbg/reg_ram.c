@@ -30,8 +30,6 @@ typedef struct
 }MemFlashOp;
 #pragma pack()
 
-// only support uart inttrupt
-// TODO: add read register in breakpoint
 SerDbg_Stat SDB_Read_Reg_op()
 {
     RegOp op;
