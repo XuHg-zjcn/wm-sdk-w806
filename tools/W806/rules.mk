@@ -64,18 +64,16 @@ $(BINODIR)/%.bin: $(IMAGEODIR)/%.elf
 	@mkdir -p $(FIRMWAREDIR)/$(TARGET)
 	$(OBJCOPY) -O binary $(IMAGEODIR)/$(TARGET).elf $(FIRMWAREDIR)/$(TARGET)/$(TARGET).bin
 
-ifeq ($(UNAME_S),Linux)
+ifeq ($(UNAME),Linux)
 	@gcc $(SDK_TOOLS)/wm_tool.c -lpthread -o $(WM_TOOL)
-else
-ifeq ($(UNAME_O),Darwin)
+else ifeq ($(UNAME),OpenBSD)
+	@cc $(SDK_TOOLS)/wm_tool.c -lpthread -o $(WM_TOOL)
+else ifeq ($(UNAME),Darwin)
 	@gcc $(SDK_TOOLS)/wm_tool.c -lpthread -o $(WM_TOOL)
-else
-ifeq ($(UNAME_O),Msys)
+else ifeq ($(UNAME),Msys)
 	@gcc $(SDK_TOOLS)/wm_tool.c -lpthread -o $(WM_TOOL)
 else
 # windows, cygwin-gcc exist bug for uart rts/cts
-endif
-endif
 endif
 
 ifeq ($(CODE_ENCRYPT),1)
@@ -130,17 +128,14 @@ help:
 	@echo  '               and capture the log output by the device'
 
 lib: .subdirs $(OBJS) $(OLIBS)
-	@cp $(LIBODIR)/libapp$(LIB_EXT) $(TOP_DIR)/lib/$(CONFIG_ARCH_TYPE)
+	@cp $(LIBODIR)/libappuser$(LIB_EXT) $(TOP_DIR)/lib/$(CONFIG_ARCH_TYPE)
 	@cp $(LIBODIR)/libwmarch$(LIB_EXT) $(TOP_DIR)/lib/$(CONFIG_ARCH_TYPE)
-	@cp $(LIBODIR)/libwmcommon$(LIB_EXT) $(TOP_DIR)/lib/$(CONFIG_ARCH_TYPE)
+	@cp $(LIBODIR)/libwmcomponent$(LIB_EXT) $(TOP_DIR)/lib/$(CONFIG_ARCH_TYPE)
 	@cp $(LIBODIR)/libdrivers$(LIB_EXT) $(TOP_DIR)/lib/$(CONFIG_ARCH_TYPE)
-	@cp $(LIBODIR)/libnetwork$(LIB_EXT) $(TOP_DIR)/lib/$(CONFIG_ARCH_TYPE)
-	@cp $(LIBODIR)/libos$(LIB_EXT) $(TOP_DIR)/lib/$(CONFIG_ARCH_TYPE)
-	@cp $(LIBODIR)/libwmsys$(LIB_EXT) $(TOP_DIR)/lib/$(CONFIG_ARCH_TYPE)
 	@echo "libs has been updated."
 
 menuconfig:
-	@$(SDK_TOOLS)/mconfig.sh
+	@$(SDK_TOOLS)/mconfig.sh $(MAKE)
 
 clean:
 #	$(foreach d, $(SUBDIRS), $(MAKE) -C $(d) clean;)

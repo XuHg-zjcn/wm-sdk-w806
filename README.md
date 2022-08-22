@@ -8,17 +8,15 @@ A SDK for WinnerMicro MCU W806.
 
 ```
 wm-sdk-w806
-├─app              # User application source code
-├─bin              # Compilaion results
+├─app              # User application code
+├─bin              # Compilation results
 ├─demo             # Demos
-├─doc              # Release notes, API Docs 
-├─include          # API header files 
+├─include          # SDK header files 
 ├─ld               # Link scripts
 ├─lib              # Libraries
 ├─Makefile
-├─platform         # Chip&Platform related common code
-├─src              # Applications, network protocols, OS and 3rd party source code
-└─tools            # Compilation scripts, utilities for CDS IDE project、CDK project and IMAGE generation
+├─platform         # SDK source code
+└─tools            # Utilities
 ```
 
 # For Linux Users
@@ -29,7 +27,10 @@ wm-sdk-w806
 * You need to register an account for download
 * 导航->工具->工具链-800系列->(For now, it is V3.10.29)
 * Download according to your OS version, e.g. for Ubuntu20.04, download csky-elfabiv2-tools-x86_64-minilibc-yyyymmdd.tar.gz
-* If you cannot download it from above link, try this https://pan.baidu.com/s/1Mp-oHNM3k4Hb8vEybv8pZg code:vw42
+* Alternative download links
+   * https://pan.baidu.com/s/1Mp-oHNM3k4Hb8vEybv8pZg code:vw42
+   * http://82.157.145.101/download/toolkits/winnermicro/w806/
+   * https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=csky-toolchain-bin (links in `source`)
 
 ## Installation
 
@@ -137,9 +138,13 @@ make monitor
 * Download toolchains: [https://occ.t-head.cn/community/download](https://occ.t-head.cn/community/download)
    * 导航 -> 工具 -> 工具链-800系列 -> (Currently it is V3.10.29)
    * Download csky-elfabiv2-tools-mingw-minilibc-yyyymmdd.tar.gz for Windows
-   * If you cannot download it from above link, try this link https://pan.baidu.com/s/1Mp-oHNM3k4Hb8vEybv8pZg code:vw42
+* If you can not download from above link, try
+   * https://pan.baidu.com/s/1Mp-oHNM3k4Hb8vEybv8pZg code:vw42
 * Download Flash Tool: [https://h.hlktech.com/Mobile/download/fdetail/143.html](https://h.hlktech.com/Mobile/download/fdetail/143.html)
    * Click the download link right to 'W800串口烧录工具_V1.4.8(.rar)'
+* Alternative download links
+   * https://pan.baidu.com/s/1Mp-oHNM3k4Hb8vEybv8pZg code:vw42
+   * http://82.157.145.101/download/toolkits/winnermicro/w806/
 
 ## Installation
 
@@ -225,11 +230,19 @@ The rest are the same as operations in Linux, please refer to `Linux - Download 
 
 # Problems
 
-1. Download Failed
+1. Download Failed  
 When it shows `can not open serial make: *** [tools/w806/rules.mk:158: flash] Error 255`, check if any other applications are occupying the USB port, if yes, close it and retry.
-2. Delay function failed in FreeRTOS
+2. Delay function failed in FreeRTOS  
 In /include/arch/xt804/csi_config.h, please comment out `#define CONFIG_KERNEL_NONE 1`
-3. Hex is not updated
+3. Hex is not updated  
 If the compilation doesn't reflect your code changes, please clean the workspace with`make clean` or `make distclean`
-4. Auto-reset failed
+4. Auto-reset failed  
 In some cases the auto-reset may fail, you need to press the Reset key to reset the board manually.
+
+# License
+
+The code of WM-SDK-W806 is licensed under the Apache-2.0 license.
+
+As WM-SDK-W806 includes code from many upstream projects it includes many copyright owners. WM-SDK-W806 makes NO claim of copyright on any upstream code. Patches to upstream code have the same license as the upstream project, unless specified otherwise. For a complete copyright list please checkout the source code to examine license headers. 
+
+Unless expressly stated otherwise all code submitted to the WM-SDK-W806 project (in any form) will be licensed under Apache-2.0 license. You are absolutely free to retain copyright. To retain copyright simply add a copyright header to each submitted code page. If you submit code that is not your own work it is your responsibility to resolve the conflicts and place a header stating the copyright.

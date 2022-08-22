@@ -11,13 +11,11 @@ wm-sdk-w806
 ├─app              # 用户应用代码
 ├─bin              # 编译中间及结果产物
 ├─demo             # 功能演示代码
-├─doc              # 文档及发布说明
-├─include          # API头文件
+├─include          # SDK头文件
 ├─ld               # 链接脚本
 ├─lib              # 库文件
 ├─Makefile
-├─platform         # 芯片和平台相关公共代码
-├─src              # 操作系统,网络协议及应用和第三方项目源代码
+├─platform         # SDK源代码
 └─tools            # 编译脚本和工具
 ```
 
@@ -28,7 +26,10 @@ wm-sdk-w806
 * https://occ.t-head.cn/community/download 下载编译工具
 * 导航->工具->工具链-800系列->(当前是V3.10.29)
 * 根据自己的操作系统, 下载对应版本, 对于Ubuntu20.04, 下载 csky-elfabiv2-tools-x86_64-minilibc-yyyymmdd.tar
-* 如果上面的链接有问题或者无法注册, 可以通过百度盘下载 https://pan.baidu.com/s/1Mp-oHNM3k4Hb8vEybv8pZg code:vw42
+* 其它下载方式
+   * 百度盘下载 https://pan.baidu.com/s/1Mp-oHNM3k4Hb8vEybv8pZg code:vw42
+   * http://82.157.145.101/download/toolkits/winnermicro/w806/
+   * AUR https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=csky-toolchain-bin (在source中找到下载地址)
 
 ## 安装
 
@@ -84,7 +85,7 @@ make
 cd wm-sdk-w806
 make menuconfig
 ```
-在menuconfig界面中, Download Configuration -> download port, 填入开发板在你的系统中对应的USB端口, 例如`ttyUSB0`, 注意这里只需要填纯端口名, 不需要用完整的路径. 可以调高波特率加快下载，只支持`115200`, `460800`, `921600`, `1000000`, `2000000`, Save后退出menuconfig
+在menuconfig界面中, Download Configuration -> download port, 填入开发板在你的系统中对应的USB端口, 例如`ttyUSB0`, 注意这里只需要填纯端口名, 不需要用完整的路径. 可以调高波特率加快下载, 只支持`115200`, `460800`, `921600`, `1000000`, `2000000`, Save后退出menuconfig
 
 执行烧录
 ```bash
@@ -133,9 +134,11 @@ make monitor
 * 下载工具链 [https://occ.t-head.cn/community/download](https://occ.t-head.cn/community/download)
    * 导航 -> 工具 -> 工具链-800系列 -> (当前是V3.10.29)
    * 下载对应版本, 对于Win10, 下载 csky-elfabiv2-tools-mingw-minilibc-20210423.tar.gz
-   * 如果无法下载或无法注册, 请通过百度盘下载 https://pan.baidu.com/s/1Mp-oHNM3k4Hb8vEybv8pZg code:vw42
 * 下载烧录工具 [https://h.hlktech.com/Mobile/download/fdetail/143.html](https://h.hlktech.com/Mobile/download/fdetail/143.html)
    * 点击 'W800串口烧录工具_V1.4.8(.rar)' 右侧的下载链接下载
+* 其它下载方式
+   * 百度盘下载 https://pan.baidu.com/s/1Mp-oHNM3k4Hb8vEybv8pZg code:vw42
+   * http://82.157.145.101/download/toolkits/winnermicro/w806/
 
 ## 安装和配置
 
@@ -212,17 +215,17 @@ cd wm-sdk-w806
 make menuconfig
 ```
 在menuconfig界面中, Download Configuration -> download port, 填入开发板在你的系统中对应的USB端口, 例如`COM5`, 注意这里只需要填纯端口名, 不需要用完整的路径. 
-可以调高波特率加快下载，只支持`115200`, `460800`, `921600`, `1000000`, `2000000`, Save后退出menuconfig
+可以调高波特率加快下载, 只支持`115200`, `460800`, `921600`, `1000000`, `2000000`, Save后退出menuconfig
 
 其余烧录和选项与Linux环境相同, 请参考Linux相应说明.
 
 ## 问题
 
-1. 下载失败
+1. 下载失败  
 如果出现`can not open serial make: *** [tools/w806/rules.mk:158: flash] Error 255`错误, 检查一下是否有其他串口软件占用了这个端口, 如果有需要先关闭
-2. 使用FreeRTOS时, 延时无效
+2. 使用FreeRTOS时, 延时无效  
 请检查: 在/include/arch/xt804/csi_config.h中, 是否未将`#define CONFIG_KERNEL_NONE 1`宏定义注释掉?
-3. 编译结果未更新
+3. 编译结果未更新  
 如果修改代码后编译, 发现固件未更新, 可以执行下面的命令清空旧的编译输出, 然后再次编译
 ```bash
 # 清理旧的编译结果和中间结果
@@ -230,5 +233,11 @@ make distclean
 # 重新编译
 make
 ```
-4. 自动复位失败
+4. 自动复位失败  
 在个别情况下, 自动复位会失败, 这时候需要按开发板的 Reset 键进行手工复位
+
+# 授权
+
+WM-SDK-W806 项目的代码使用 Apache-2.0 协议授权.
+
+WM-SDK-W806 项目中包含的, 来自于其它上游项目的代码及其派生的补丁, 其版权为各上游项目所有. 除非特别指出, 否则 WM-SDK-W806 不会主张任何版权. 若需获得各项目的完整版权声明, 请查看源代码中的授权信息. 除非特别声明, 所有以任何形式提交至 WM-SDK-W806 项目的代码将使用同样的Apache-2.0 协议授权. 源代码作者如需声明代码版权, 请在文件头部添加声明. 如果提交的代码中包含第三方作品, 提交者应当负责避免版权和授权冲突, 并在文件头部添加声明.
